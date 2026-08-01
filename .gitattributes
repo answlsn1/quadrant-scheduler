@@ -1,0 +1,7 @@
+# Vercel(리눅스)에서 빌드되므로 저장소 안에서는 LF로 통일한다.
+# 윈도우 작업 사본에서 CRLF로 바뀌는 노이즈를 막는다.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff2 binary
