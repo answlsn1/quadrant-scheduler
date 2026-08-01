@@ -1,0 +1,41 @@
+# 사분면 스케줄러
+
+캡처 → 사분면 분류 → **실행**으로 연결되는 1인용 우선순위 도구.
+분류하고 끝나는 도구가 아니라, 사분면마다 강제 동사가 붙는다.
+
+| 번호 | 정의 | 강제 동사 |
+|---|---|---|
+| 1 | 중요 O / 급함 O | 지금 한다 |
+| 2 | 중요 X / 급함 O | 몰아서 처리 |
+| 3 | 중요 O / 급함 X | 일정에 박제 |
+| 4 | 중요 X / 급함 X | 버린다 |
+
+> 2번과 3번은 표준 아이젠하워 매트릭스와 반대다. 의도된 것이니 교정하지 말 것.
+> 자세한 규칙은 [AGENTS.md](AGENTS.md).
+
+## 스택
+
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Auth + Postgres + RLS) · Vercel · PWA
+
+## 로컬 실행
+
+```bash
+npm install
+cp .env.example .env.local   # Supabase URL/publishable 키 채우기
+npm run dev
+```
+
+임시 PWA 아이콘 재생성: `node scripts/make-icons.mjs`
+
+## 문서
+
+- [AGENTS.md](AGENTS.md) — 작업 규칙, 절대 건드리지 말 것, 스코프 아웃
+- [DECISIONS.md](DECISIONS.md) — 결정 로그
+- [BACKLOG.md](BACKLOG.md) — v1에서 뺀 것들
+
+## 진행 상황
+
+- [x] 1단계 — 기반 다지기 (스캐폴딩 · DB + RLS · 로그인 · PWA / 배포는 인증 대기)
+- [ ] 2단계 — 뼈대 (캡처 · 분류 · 홈 · 보드)
+- [ ] 3단계 — 살 붙이기 (UI/UX · 5초 룰 실측)
+- [ ] 4단계 — 완공 & 1주 실사용

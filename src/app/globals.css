@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * 1단계는 기반만 깐다. 색·타이포·터치 타겟 등 본격 디자인은 3단계.
+ * 다크 기본만 미리 고정해 둔다 (작업지시서 3단계 1항).
+ */
+:root {
+  --background: #0b0b0d;
+  --foreground: #ededed;
+  --muted: #8b8b93;
+  --border: #26262c;
+  --accent: #e5e5e7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+  /* PWA 전체화면에서 노치·홈인디케이터 영역 확보 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/*
+ * iOS Safari는 폰트가 16px 미만인 입력에 포커스하면 화면을 확대한다.
+ * 확대되면 캡처 흐름이 끊기므로(5초 룰) 확대 자체를 막는 대신 16px을 보장한다.
+ * user-scalable=no로 막지 않는 이유는 접근성 때문이다.
+ */
+input,
+textarea,
+select,
+button {
+  font-size: 16px;
+}
