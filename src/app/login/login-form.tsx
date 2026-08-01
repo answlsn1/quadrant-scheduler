@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 import { createClient } from '@/lib/supabase/client'
 
@@ -11,6 +11,16 @@ import { createClient } from '@/lib/supabase/client'
 export function LoginForm({ next }: { next: string }) {
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+
+  /*
+   * 하이드레이션이 끝나기 전까지 제출을 막는다.
+   * 이 form에는 action이 없어서, onSubmit 핸들러가 붙기 전에 버튼이 눌리면
+   * 브라우저가 현재 URL로 네이티브 GET 제출을 해버린다.
+   * 그러면 비밀번호가 쿼리스트링(/login?email=...&password=...)에 실려
+   * 브라우저 기록과 서버 접근 로그에 남는다. 실제로 재현됨.
+   */
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => setHydrated(true), [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -76,7 +86,7 @@ export function LoginForm({ next }: { next: string }) {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={!hydrated || pending}
         className="mt-2 rounded-lg bg-foreground px-3 py-3 font-medium text-background disabled:opacity-50"
       >
         {pending ? '확인 중' : '로그인'}

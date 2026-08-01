@@ -20,6 +20,7 @@
 - iOS용 **`apple-mobile-web-app-capable`** 메타를 `metadata.other`로 직접 추가. Next 16은 표준 이름(`mobile-web-app-capable`)만 내보내는데 iOS Safari는 apple- 접두를 봐야 주소창 없이 뜬다. 실측으로 발견함.
 - 입력 요소 `font-size: 16px` 고정 — iOS가 16px 미만 입력 포커스 시 화면을 확대해 캡처 흐름이 끊긴다. `user-scalable=no`로 막지 않는 이유는 접근성.
 - DB 타입은 Supabase에서 자동 생성해 `src/types/database.ts`에 둔다. 손으로 고치지 않는다.
+- **하이드레이션 전 제출 차단** — 로그인 버튼을 `hydrated` 상태로 잠근다. form에 `action`이 없어 onSubmit 핸들러가 붙기 전 제출이 일어나면 브라우저가 네이티브 GET으로 보내면서 **비밀번호가 쿼리스트링에 실린다**(브라우저 기록·접근 로그에 잔류). 프로덕션 실측 중 발견해 수정.
 - `npm audit` high 3건은 전부 Next.js가 끌고 오는 전이 의존성(postcss·sharp). `audit fix --force`는 Next를 9.3.3으로 내리므로 적용하지 않는다. 공격자가 준 CSS·이미지를 처리하는 앱이 아니라 실질 노출이 없다.
 
 ## 미결 (사장님 액션 대기)
