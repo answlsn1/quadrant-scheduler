@@ -1,13 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { isAllowedEmail, safeNext } from '@/lib/auth'
+import { safeNext } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 
 /**
  * 구글 OAuth 콜백. Supabase가 발급한 PKCE code를 세션으로 교환한다.
  *
- * Route Handler라서 next/headers의 cookies()에 쓰기가 가능하고,
- * 교환 과정에서 심어진 세션 쿠키가 응답에 함께 실린다.
+ * 다중 사용자 전환(2026-08-02) 이후 allowlist 차단은 없다.
+ * 처음 로그인하는 구글 계정은 이 교환 과정에서 자동으로 계정이 만들어진다 —
+ * 별도의 회원가입 화면이 필요 없는 이유다.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
@@ -24,17 +25,10 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
     return redirectTo(request, '/login?error=exchange')
-  }
-
-  // 허용 목록 밖의 구글 계정은 여기서 끊는다.
-  // 세션 쿠키가 브라우저에 도달하기 전에 같은 요청 안에서 지운다.
-  if (!isAllowedEmail(data.user?.email)) {
-    await supabase.auth.signOut()
-    return redirectTo(request, '/login?error=denied')
   }
 
   return redirectTo(request, next)

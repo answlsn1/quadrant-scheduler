@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 
+import { AccountMenu } from '@/components/account-menu'
 import { AppNav } from '@/components/app-nav'
 import { CaptureBar } from '@/components/capture-bar'
 import { TaskItem } from '@/components/task-item'
@@ -30,15 +31,11 @@ export function HomeView() {
   return (
     <div className="app-shell flex flex-col">
       <main className="flex-1 overflow-y-auto px-4 pt-6">
-        <header className="flex items-baseline justify-between">
+        <header className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">오늘</h1>
-          <div className="flex items-baseline gap-3 text-xs text-muted">
-            <span className="tabular-nums">인박스 {inbox.length}</span>
-            <form action="/logout" method="post">
-              <button type="submit" className="text-muted underline">
-                로그아웃
-              </button>
-            </form>
+          <div className="flex items-center gap-3">
+            <span className="text-xs tabular-nums text-muted">인박스 {inbox.length}</span>
+            <AccountMenu />
           </div>
         </header>
 

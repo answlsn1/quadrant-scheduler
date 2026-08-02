@@ -11,7 +11,9 @@ import { usePathname } from 'next/navigation'
 const ITEMS = [
   { href: '/', label: '오늘' },
   { href: '/classify', label: '분류' },
-  { href: '/board', label: '보드' },
+  // 라벨만 "스케줄러"로 바꿨다 (사장님 요청 2026-08-02). URL은 /board 유지 —
+  // 이미 배포된 앱의 즐겨찾기·홈스크린 진입점을 깨뜨릴 이유가 없다.
+  { href: '/board', label: '스케줄러' },
   { href: '/archive', label: '기록' },
 ]
 

@@ -7,6 +7,9 @@ import { useRef, useState, type FormEvent } from 'react'
  *
  * 위가 아니라 아래인 이유: 원핸드 조작 기준 엄지가 닿는 곳은 아래이고,
  * 키보드가 올라오면 입력창이 그 바로 위에 붙어 이동 거리가 0이 된다.
+ *
+ * 우측 → 버튼은 메시지 앱의 전송 버튼과 같은 문법이다 (사장님 요청 2026-08-02).
+ * Enter로도 당연히 저장된다 — 버튼은 "여기 적으면 저장된다"를 눈으로 말해주는 장치.
  */
 export function CaptureBar({
   onCapture,
@@ -31,19 +34,38 @@ export function CaptureBar({
 
   return (
     <form onSubmit={handleSubmit} className="px-4 pb-2 pt-2">
-      <input
-        ref={inputRef}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        autoFocus
-        enterKeyHint="done"
-        autoComplete="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        placeholder="떠오른 것을 그냥 적는다"
-        aria-label="캡처"
-        className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-4 py-3.5 caret-[var(--q3)] outline-none placeholder:text-muted focus:border-[var(--q3)]"
-      />
+      <div className="relative">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          autoFocus
+          enterKeyHint="done"
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          placeholder="떠오른 것을 그냥 적는다"
+          aria-label="캡처"
+          className="min-h-[52px] w-full rounded-xl border border-border bg-surface py-3.5 pl-4 pr-14 caret-[var(--q3)] outline-none placeholder:text-muted focus:border-[var(--q3)]"
+        />
+        <button
+          type="submit"
+          disabled={!draft.trim()}
+          aria-label="저장"
+          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-[var(--q3)] text-background transition-opacity duration-150 disabled:opacity-25"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
     </form>
   )
 }

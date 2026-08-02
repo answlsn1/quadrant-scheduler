@@ -74,6 +74,41 @@ export function useArchive() {
     return all
   }, [supabase])
 
+  /**
+   * 되돌리기. 잘못 눌러 넘어온 것을 복구한다 (사장님 요청 2026-08-02).
+   *
+   * 어디로 돌아가는가:
+   * - 1·2·3번 → 다시 활성(active). 사분면·날짜는 그대로 남아 있어 원래 자리로 돌아간다.
+   * - 4번 → 인박스. 4번은 강제 동사가 "버린다"라 active 상태가 존재할 수 없는 칸이다
+   *   (홈·스케줄러 어디에도 active 4번을 그리는 자리가 없다). 분류부터 다시 거치게 한다.
+   */
+  const restore = useCallback(
+    async (task: Task) => {
+      const bucket = task.status as 'done' | 'dropped'
+
+      // 낙관적으로 목록·카운트에서 먼저 뺀다
+      setItems((prev) => prev.filter((t) => t.id !== task.id))
+      setCounts((prev) => ({ ...prev, [bucket]: Math.max(0, prev[bucket] - 1) }))
+
+      const changes =
+        task.quadrant === 4
+          ? { status: 'inbox', quadrant: null, completed_at: null, dropped_at: null }
+          : { status: 'active', completed_at: null, dropped_at: null }
+
+      const { error: restoreError } = await supabase
+        .from('tasks')
+        .update(changes)
+        .eq('id', task.id)
+
+      if (restoreError) {
+        void load() // 실패하면 서버 상태로 되돌린다
+        return false
+      }
+      return true
+    },
+    [supabase, load],
+  )
+
   const shown = items.length
   const total = counts.done + counts.dropped
 
@@ -85,5 +120,6 @@ export function useArchive() {
     /** 상한에 걸려 일부만 보여주고 있는지 */
     truncated: total > shown,
     fetchAllForExport,
+    restore,
   }
 }

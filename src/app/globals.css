@@ -73,6 +73,21 @@ button {
   font-size: 16px;
 }
 
+/*
+ * PC에서 누를 수 있는 것은 전부 손가락 커서. (사장님 요청 2026-08-02)
+ * Tailwind v4 프리플라이트가 버튼의 기본 cursor: pointer를 없앴다 —
+ * 폰에서는 티가 안 나지만 데스크탑에서는 "이거 눌리는 건가?"가 된다.
+ */
+@layer base {
+  a,
+  summary,
+  label:has(> input[type='checkbox']),
+  [role='button'],
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 /* 키보드 포커스는 항상 보이게 */
 :focus-visible {
   outline: 2px solid var(--q3);

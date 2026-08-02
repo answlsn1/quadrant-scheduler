@@ -17,7 +17,7 @@ type Filter = 'done' | 'dropped'
  */
 export function ArchiveView() {
   const { tasks } = useTasks()
-  const { items, counts, loading, error, truncated, fetchAllForExport } = useArchive()
+  const { items, counts, loading, error, truncated, fetchAllForExport, restore } = useArchive()
   const [filter, setFilter] = useState<Filter>('done')
   const [exportState, setExportState] = useState<'idle' | 'working' | 'failed'>('idle')
 
@@ -83,11 +83,23 @@ export function ArchiveView() {
                     <li
                       key={task.id}
                       style={{ borderLeftColor: quadrantColor(task.quadrant) }}
-                      className="rounded-lg border-l-[3px] bg-surface px-3 py-2.5 text-sm"
+                      className="flex items-center gap-2 rounded-lg border-l-[3px] bg-surface py-1 pl-3 pr-1 text-sm"
                     >
-                      <span className={filter === 'dropped' ? 'text-muted line-through' : undefined}>
+                      <span
+                        className={`min-w-0 flex-1 py-1.5 ${
+                          filter === 'dropped' ? 'text-muted line-through' : ''
+                        }`}
+                      >
                         {task.title}
                       </span>
+                      {/* 잘못 눌러 넘어온 것의 복구 경로. 4번은 인박스로, 나머지는 원래 자리로. */}
+                      <button
+                        type="button"
+                        onClick={() => void restore(task)}
+                        className="min-h-[44px] shrink-0 rounded-lg px-3 text-xs text-muted transition-colors duration-150 hover:text-foreground"
+                      >
+                        되돌리기
+                      </button>
                     </li>
                   ))}
                 </ul>

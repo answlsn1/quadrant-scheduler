@@ -7,7 +7,6 @@ export const metadata = {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  denied: '허용되지 않은 계정입니다.',
   oauth: '구글 로그인이 취소됐거나 실패했습니다.',
   nocode: '인증 코드가 오지 않았습니다. 다시 시도해 주세요.',
   exchange: '세션을 만들지 못했습니다. 다시 시도해 주세요.',
@@ -37,6 +36,16 @@ export default async function LoginPage({
         ) : null}
 
         <LoginForm next={safeNext(next)} />
+
+        <p className="mt-8 text-xs text-muted">
+          처음이어도 구글로 로그인하면 바로 계정이 만들어진다.
+          <br />
+          폰에 앱으로 설치하려면{' '}
+          <a href="/install" className="underline">
+            설치 안내
+          </a>
+          .
+        </p>
       </div>
     </main>
   )
