@@ -127,6 +127,7 @@ export function useTasks() {
         status: 'inbox',
         scheduled_date: null,
         scheduled_end_date: null,
+        scheduled_time: null,
         created_at: new Date().toISOString(),
         completed_at: null,
         dropped_at: null,
@@ -152,6 +153,7 @@ export function useTasks() {
       quadrant: Quadrant,
       scheduledDate?: string | null,
       scheduledEndDate?: string | null,
+      scheduledTime?: string | null,
     ) => {
       const now = new Date().toISOString()
       const start = scheduledDate ?? null
@@ -162,8 +164,9 @@ export function useTasks() {
               quadrant,
               status: 'active',
               scheduled_date: start,
-              // 시작 없이 끝만 있을 수 없다 (DB CHECK와 동일 규칙)
+              // 시작 없이 끝·시간만 있을 수 없다 (DB CHECK와 동일 규칙)
               scheduled_end_date: start ? (scheduledEndDate ?? null) : null,
+              scheduled_time: start ? (scheduledTime ?? null) : null,
             }
 
       return patch(id, changes, '분류를 저장하지 못했습니다.')
@@ -192,12 +195,18 @@ export function useTasks() {
   )
 
   const reschedule = useCallback(
-    (id: string, scheduledDate: string | null, scheduledEndDate: string | null = null) =>
+    (
+      id: string,
+      scheduledDate: string | null,
+      scheduledEndDate: string | null = null,
+      scheduledTime: string | null = null,
+    ) =>
       patch(
         id,
         {
           scheduled_date: scheduledDate,
           scheduled_end_date: scheduledDate ? scheduledEndDate : null,
+          scheduled_time: scheduledDate ? scheduledTime : null,
         },
         '날짜를 저장하지 못했습니다.',
       ),

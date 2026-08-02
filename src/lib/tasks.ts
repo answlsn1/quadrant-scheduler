@@ -31,13 +31,27 @@ export function formatDate(iso: string): string {
   return `${m}월 ${d}일 (${weekday})`
 }
 
-/** 일정 표시 문자열. 기간이면 '8월 5일 (수) ~ 8월 10일 (월)' */
+/** DB의 '14:30:00' → 화면의 '14:30' */
+export function formatTime(time: string): string {
+  return time.slice(0, 5)
+}
+
+/**
+ * 일정 표시 문자열.
+ * '8월 5일 (수)' / '8월 5일 (수) 14:30' / '8월 5일 (수) 14:30 ~ 8월 10일 (월)'
+ * 시간은 선택 사항이고, 기간 일정에서는 시작일에 붙는다.
+ */
 export function formatSchedule(task: Task): string | null {
   if (!task.scheduled_date) return null
+
+  const start =
+    formatDate(task.scheduled_date) +
+    (task.scheduled_time ? ` ${formatTime(task.scheduled_time)}` : '')
+
   if (!task.scheduled_end_date || task.scheduled_end_date === task.scheduled_date) {
-    return formatDate(task.scheduled_date)
+    return start
   }
-  return `${formatDate(task.scheduled_date)} ~ ${formatDate(task.scheduled_end_date)}`
+  return `${start} ~ ${formatDate(task.scheduled_end_date)}`
 }
 
 /**

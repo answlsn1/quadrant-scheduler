@@ -33,7 +33,7 @@ export function CaptureBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-4 pb-2 pt-2">
+    <form onSubmit={handleSubmit} className="px-4 pb-2 pt-1.5">
       <div className="relative">
         <input
           ref={inputRef}

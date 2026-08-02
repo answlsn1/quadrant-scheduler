@@ -41,9 +41,14 @@ export function HomeView() {
 
   const queueOne = active.filter((t) => t.quadrant === 1)
   // 오늘 것과 함께 지난 것도 올린다. 안 그러면 놓친 3번이 조용히 사라진다.
-  const dueThree = active.filter(
-    (t) => t.quadrant === 3 && t.scheduled_date && t.scheduled_date <= today,
-  )
+  // 정렬: 날짜 → 시간(없으면 마지막). 시간을 정했다는 건 그 시각에 하겠다는 뜻이다.
+  const dueThree = active
+    .filter((t) => t.quadrant === 3 && t.scheduled_date && t.scheduled_date <= today)
+    .sort((a, b) => {
+      const byDate = (a.scheduled_date ?? '').localeCompare(b.scheduled_date ?? '')
+      if (byDate !== 0) return byDate
+      return (a.scheduled_time ?? '99').localeCompare(b.scheduled_time ?? '99')
+    })
   const batchTwo = active.filter((t) => t.quadrant === 2)
   const unscheduledThree = active.filter(isUnscheduledThree)
 
@@ -51,7 +56,7 @@ export function HomeView() {
     <div className="app-shell flex flex-col">
       <main className="flex-1 overflow-y-auto px-4 pt-6">
         <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold tracking-tight">오늘</h1>
+          <h1 className="text-xl font-semibold tracking-tight">오늘의 일정</h1>
           <div className="flex items-center gap-3">
             <span className="text-xs tabular-nums text-muted">인박스 {inbox.length}</span>
             <AccountMenu />
@@ -110,6 +115,7 @@ export function HomeView() {
           <div className="mt-6 flex flex-col gap-7 pb-6">
             <Section
               quadrant={1}
+              label="지금 할 것"
               tasks={queueOne}
               empty="지금 할 것 없음."
               onComplete={complete}
@@ -119,6 +125,7 @@ export function HomeView() {
 
             <Section
               quadrant={3}
+              label="예정된 일정"
               tasks={dueThree}
               empty="오늘 일정에 넣어둔 것 없음."
               onComplete={complete}
@@ -164,6 +171,10 @@ export function HomeView() {
         className="shrink-0 bg-background"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
+        {/* 탭 이름이 "오늘의 일정"이 되면서, 입력창의 정체는 이 소제목이 말해준다 */}
+        <p className="px-4 pt-2.5 text-[11px] font-medium tracking-wide text-muted">
+          생각꺼내기
+        </p>
         <CaptureBar onCapture={capture} />
         <AppNav inboxCount={inbox.length} />
       </div>
@@ -173,6 +184,7 @@ export function HomeView() {
 
 function Section({
   quadrant,
+  label,
   tasks,
   empty,
   onComplete,
@@ -180,14 +192,17 @@ function Section({
   onReschedule,
 }: {
   quadrant: Quadrant
+  /**
+   * 홈에서는 상태를 말하는 이름을 쓴다 — "지금 할 것", "예정된 일정".
+   * 강제 동사(QUADRANT_SPEC.verb)는 분류 버튼처럼 "행동을 시키는" 자리의 것이다.
+   */
+  label: string
   tasks: Task[]
   empty: string
   onComplete: (id: string) => void
   onDrop: (id: string) => void
-  onReschedule: (id: string, start: string | null, end: string | null) => void
+  onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
 }) {
-  const spec = QUADRANT_SPEC[quadrant]
-
   return (
     <section>
       <h2 className="flex items-center gap-2 text-[11px] tracking-wide text-muted">
@@ -195,7 +210,7 @@ function Section({
           className="h-[7px] w-[7px] rounded-full"
           style={{ background: quadrantColor(quadrant) }}
         />
-        {spec.id} · {spec.verb}
+        {quadrant} · {label}
       </h2>
       <ul className="mt-2">
         {tasks.length === 0 ? (

@@ -12,7 +12,12 @@ type Props = {
   task: Task
   onComplete: (id: string) => void
   onDrop: (id: string) => void
-  onReschedule: (id: string, start: string | null, end: string | null) => void
+  onReschedule: (
+    id: string,
+    start: string | null,
+    end: string | null,
+    time: string | null,
+  ) => void
 }
 
 /**
@@ -98,39 +103,67 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
           </button>
 
           {isThree ? (
-            <div className="flex w-full items-center gap-2">
-              <label className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[11px] text-muted">시작</span>
+            <>
+              <div className="flex w-full items-center gap-2">
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] text-muted">시작</span>
+                  <input
+                    type="date"
+                    value={task.scheduled_date ?? ''}
+                    onChange={(e) => {
+                      const start = e.target.value || null
+                      // 시작을 지우면 끝·시간도 함께 비운다 (혼자 남을 수 없다).
+                      // 시작을 끝보다 뒤로 미루면 끝을 비운다 — 그대로 보내면
+                      // DB CHECK(끝 >= 시작)에 걸려 롤백 토스트만 뜬다. (리뷰 발견)
+                      const end =
+                        start && task.scheduled_end_date && task.scheduled_end_date >= start
+                          ? task.scheduled_end_date
+                          : null
+                      onReschedule(task.id, start, end, start ? task.scheduled_time : null)
+                    }}
+                    aria-label="시작 날짜"
+                    className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
+                  />
+                </label>
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] text-muted">끝 (기간일 때만)</span>
+                  <input
+                    type="date"
+                    value={task.scheduled_end_date ?? ''}
+                    min={task.scheduled_date ?? undefined}
+                    disabled={!task.scheduled_date}
+                    onChange={(e) =>
+                      onReschedule(
+                        task.id,
+                        task.scheduled_date,
+                        e.target.value || null,
+                        task.scheduled_time,
+                      )
+                    }
+                    aria-label="끝 날짜"
+                    className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm disabled:opacity-40"
+                  />
+                </label>
+              </div>
+              <label className="flex w-full flex-col gap-1">
+                <span className="text-[11px] text-muted">시간 (선택)</span>
                 <input
-                  type="date"
-                  value={task.scheduled_date ?? ''}
-                  onChange={(e) =>
-                    // 시작을 지우면 끝도 함께 비운다 (끝만 남을 수 없다)
-                    onReschedule(
-                      task.id,
-                      e.target.value || null,
-                      e.target.value ? task.scheduled_end_date : null,
-                    )
-                  }
-                  aria-label="시작 날짜"
-                  className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
-                />
-              </label>
-              <label className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[11px] text-muted">끝 (기간일 때만)</span>
-                <input
-                  type="date"
-                  value={task.scheduled_end_date ?? ''}
-                  min={task.scheduled_date ?? undefined}
+                  type="time"
+                  value={task.scheduled_time ? task.scheduled_time.slice(0, 5) : ''}
                   disabled={!task.scheduled_date}
                   onChange={(e) =>
-                    onReschedule(task.id, task.scheduled_date, e.target.value || null)
+                    onReschedule(
+                      task.id,
+                      task.scheduled_date,
+                      task.scheduled_end_date,
+                      e.target.value || null,
+                    )
                   }
-                  aria-label="끝 날짜"
+                  aria-label="시간"
                   className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm disabled:opacity-40"
                 />
               </label>
-            </div>
+            </>
           ) : null}
         </div>
       ) : null}

@@ -30,7 +30,7 @@ export function BoardView() {
     <div className="app-shell flex flex-col">
       <main className="flex-1 overflow-y-auto px-4 pt-6">
         <header className="flex items-baseline justify-between">
-          <h1 className="text-xl font-semibold tracking-tight">보드</h1>
+          <h1 className="text-xl font-semibold tracking-tight">스케줄러</h1>
           <span className="text-xs tabular-nums text-muted">활성 {active.length}</span>
         </header>
 
@@ -69,7 +69,7 @@ function Cell({
   tasks: Task[]
   onComplete: (id: string) => void
   onDrop: (id: string) => void
-  onReschedule: (id: string, start: string | null, end: string | null) => void
+  onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
 }) {
   const spec = QUADRANT_SPEC[quadrant]
   const color = quadrantColor(quadrant)

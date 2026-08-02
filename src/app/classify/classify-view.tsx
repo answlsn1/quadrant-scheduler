@@ -21,6 +21,7 @@ export function ClassifyView() {
   const [awaitingDate, setAwaitingDate] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [startTime, setStartTime] = useState('')
 
   // 오래된 것부터. tasks는 최신순이라 뒤집는다.
   const queue = tasks.filter(isInbox).slice().reverse()
@@ -31,6 +32,7 @@ export function ClassifyView() {
     setAwaitingDate(false)
     setStartDate('')
     setEndDate('')
+    setStartTime('')
   }, [current?.id])
 
   function pick(quadrant: Quadrant) {
@@ -44,13 +46,18 @@ export function ClassifyView() {
     void classify(current.id, quadrant)
   }
 
-  function commitThree(start: string | null, end: string | null = null) {
+  function commitThree(
+    start: string | null,
+    end: string | null = null,
+    time: string | null = null,
+  ) {
     if (!current) return
     advanceSelection()
-    void classify(current.id, 3, start, end)
+    void classify(current.id, 3, start, end, time)
     setAwaitingDate(false)
     setStartDate('')
     setEndDate('')
+    setStartTime('')
   }
 
   /** 분류된 항목의 다음 것을 미리 선택해 둔다 — 위에서부터 착착 내려가는 흐름 */
@@ -138,10 +145,25 @@ export function ClassifyView() {
                     className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm disabled:opacity-40"
                   />
                 </label>
+              </div>
+
+              {/* 시간은 선택 사항 — 정하면 그 시각에 하겠다는 뜻이고, 오늘 화면에서 시간순으로 선다 */}
+              <div className="flex items-end gap-2">
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] text-muted">시간 (선택)</span>
+                  <input
+                    type="time"
+                    value={startTime}
+                    disabled={!startDate}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    aria-label="시간"
+                    className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm disabled:opacity-40"
+                  />
+                </label>
                 <button
                   type="button"
                   disabled={!startDate}
-                  onClick={() => commitThree(startDate, endDate || null)}
+                  onClick={() => commitThree(startDate, endDate || null, startTime || null)}
                   className="min-h-[52px] shrink-0 rounded-xl border border-border px-5 text-sm disabled:opacity-40"
                 >
                   지정

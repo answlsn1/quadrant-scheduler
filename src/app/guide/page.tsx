@@ -66,7 +66,7 @@ export default function GuidePage() {
 
       <h2 className="mt-8 text-sm font-semibold">화면 네 개</h2>
       <ul className="mt-3 flex list-none flex-col gap-2 text-sm leading-relaxed text-muted">
-        <li><b className="text-foreground">생각꺼내기</b> — 적는 곳이자 오늘 할 일을 보는 곳</li>
+        <li><b className="text-foreground">오늘의 일정</b> — 오늘 할 것을 보고, 하단 "생각꺼내기" 입력창에 적는 곳</li>
         <li><b className="text-foreground">분류</b> — 쌓인 것을 네 칸으로 나누는 곳</li>
         <li><b className="text-foreground">스케줄러</b> — 네 칸 전체를 한눈에 보는 곳</li>
         <li><b className="text-foreground">기록</b> — 완료한 것과 버린 것. 잘못 넘어왔으면 되돌리기</li>
