@@ -52,9 +52,10 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      {/* 화면 높이는 각 뷰의 .app-shell이 100dvh로 잡는다 */}
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

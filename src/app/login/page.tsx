@@ -22,7 +22,7 @@ export default async function LoginPage({
   const message = error ? (ERROR_MESSAGES[error] ?? '로그인에 실패했습니다.') : null
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-12">
+    <main className="app-shell flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <h1 className="text-xl font-medium">사분면</h1>
         <p className="mt-1 text-sm text-muted">캡처 → 분류 → 실행</p>

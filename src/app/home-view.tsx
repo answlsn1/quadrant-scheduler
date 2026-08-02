@@ -1,18 +1,19 @@
 'use client'
 
-import { useRef, useState, type FormEvent } from 'react'
+import Link from 'next/link'
 
 import { AppNav } from '@/components/app-nav'
+import { CaptureBar } from '@/components/capture-bar'
 import { TaskItem } from '@/components/task-item'
 import { Toast } from '@/components/toast'
-import { QUADRANT_SPEC } from '@/lib/quadrant'
-import { isActive, isInbox, isUnscheduledThree, todayISO } from '@/lib/tasks'
+import { QUADRANT_SPEC, quadrantColor, type Quadrant } from '@/lib/quadrant'
+import { isActive, isInbox, isUnscheduledThree, todayISO, type Task } from '@/lib/tasks'
+import { useKeyboardInset } from '@/lib/use-keyboard-inset'
 import { useTasks } from '@/lib/use-tasks'
 
 export function HomeView() {
   const { tasks, loading, toast, capture, complete, drop, reschedule } = useTasks()
-  const [draft, setDraft] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const keyboardInset = useKeyboardInset()
 
   const today = todayISO()
   const inbox = tasks.filter(isInbox)
@@ -26,59 +27,42 @@ export function HomeView() {
   const batchTwo = active.filter((t) => t.quadrant === 2)
   const unscheduledThree = active.filter(isUnscheduledThree)
 
-  async function handleCapture(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const value = draft
-    if (!value.trim()) return
-
-    // 먼저 비우고 포커스를 유지한다. 연속으로 쏟아붓는 흐름이 끊기면 안 된다.
-    setDraft('')
-    inputRef.current?.focus()
-
-    const ok = await capture(value)
-    if (!ok) setDraft(value) // 실패했으면 쓴 내용을 돌려준다
-  }
-
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <main className="flex flex-1 flex-col px-5 pt-8">
+    <div className="app-shell flex flex-col">
+      <main className="flex-1 overflow-y-auto px-4 pt-6">
         <header className="flex items-baseline justify-between">
-          <h1 className="text-xl font-medium">오늘</h1>
-          <form action="/logout" method="post">
-            <button type="submit" className="text-xs text-muted underline">
-              로그아웃
-            </button>
-          </form>
+          <h1 className="text-xl font-semibold tracking-tight">오늘</h1>
+          <div className="flex items-baseline gap-3 text-xs text-muted">
+            <span className="tabular-nums">인박스 {inbox.length}</span>
+            <form action="/logout" method="post">
+              <button type="submit" className="text-muted underline">
+                로그아웃
+              </button>
+            </form>
+          </div>
         </header>
 
-        {/* 미배치 3번은 이 앱의 승부처라 항상 위에 세워둔다 */}
-        <div className="mt-2 flex gap-3 text-xs text-muted">
-          <span>인박스 {inbox.length}</span>
-          <span className={unscheduledThree.length > 0 ? 'text-amber-400' : undefined}>
-            미배치 3번 {unscheduledThree.length}
-          </span>
-        </div>
-
-        <form onSubmit={handleCapture} className="mt-4">
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            autoFocus
-            enterKeyHint="done"
-            autoComplete="off"
-            placeholder="떠오른 것을 그냥 적는다"
-            aria-label="캡처"
-            className="w-full rounded-lg border border-border bg-transparent px-3.5 py-3.5 outline-none focus:border-foreground"
-          />
-        </form>
+        {/*
+         * 3번이 밀리는 게 이 앱이 풀려는 문제다. 못 본 척할 수 없어야 한다.
+         * 0이면 아예 사라져서 평소에는 조용하다.
+         */}
+        {unscheduledThree.length > 0 ? (
+          <Link
+            href="/board"
+            className="mt-4 flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--warn)_32%,transparent)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)] px-3.5 py-3 text-[13px] text-warn"
+          >
+            <span>미배치 3번</span>
+            <b className="tabular-nums">{unscheduledThree.length}</b>
+            <span className="ml-auto">날짜 박기 →</span>
+          </Link>
+        ) : null}
 
         {loading ? (
           <p className="mt-10 text-sm text-muted">불러오는 중</p>
         ) : (
-          <div className="mt-8 flex flex-col gap-8 pb-8">
+          <div className="mt-6 flex flex-col gap-7 pb-6">
             <Section
-              quadrantId={1}
+              quadrant={1}
               tasks={queueOne}
               empty="지금 할 것 없음."
               onComplete={complete}
@@ -87,7 +71,7 @@ export function HomeView() {
             />
 
             <Section
-              quadrantId={3}
+              quadrant={3}
               tasks={dueThree}
               empty="오늘 박제된 것 없음."
               onComplete={complete}
@@ -95,13 +79,20 @@ export function HomeView() {
               onReschedule={reschedule}
             />
 
-            <details className="group">
-              <summary className="cursor-pointer list-none text-sm text-muted">
-                2 · {QUADRANT_SPEC[2].verb} ({batchTwo.length})
+            <details className="rounded-xl border border-dashed border-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3.5 text-[13px] text-muted">
+                <span className="flex items-center gap-2">
+                  <i
+                    className="h-[7px] w-[7px] rounded-full"
+                    style={{ background: quadrantColor(2) }}
+                  />
+                  2 · {QUADRANT_SPEC[2].verb}
+                </span>
+                <span className="tabular-nums">{batchTwo.length}개 ⌄</span>
               </summary>
-              <ul className="mt-2">
+              <ul className="px-2 pb-2">
                 {batchTwo.length === 0 ? (
-                  <li className="py-3 text-sm text-muted">몰아서 처리할 것 없음.</li>
+                  <li className="px-1.5 py-3 text-sm text-muted">몰아서 처리할 것 없음.</li>
                 ) : (
                   batchTwo.map((task) => (
                     <TaskItem
@@ -120,36 +111,48 @@ export function HomeView() {
       </main>
 
       <Toast message={toast} />
-      <AppNav inboxCount={inbox.length} />
+
+      {/* 키보드가 올라오면 그만큼 밀어 올려 입력창이 항상 키보드 바로 위에 붙는다 */}
+      <div
+        className="shrink-0 bg-background"
+        style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
+      >
+        <CaptureBar onCapture={capture} />
+        <AppNav inboxCount={inbox.length} />
+      </div>
     </div>
   )
 }
 
 function Section({
-  quadrantId,
+  quadrant,
   tasks,
   empty,
   onComplete,
   onDrop,
   onReschedule,
 }: {
-  quadrantId: 1 | 3
-  tasks: ReturnType<typeof useTasks>['tasks']
+  quadrant: Quadrant
+  tasks: Task[]
   empty: string
   onComplete: (id: string) => void
   onDrop: (id: string) => void
   onReschedule: (id: string, date: string | null) => void
 }) {
-  const spec = QUADRANT_SPEC[quadrantId]
+  const spec = QUADRANT_SPEC[quadrant]
 
   return (
     <section>
-      <h2 className="text-sm text-muted">
+      <h2 className="flex items-center gap-2 text-[11px] tracking-wide text-muted">
+        <i
+          className="h-[7px] w-[7px] rounded-full"
+          style={{ background: quadrantColor(quadrant) }}
+        />
         {spec.id} · {spec.verb}
       </h2>
       <ul className="mt-2">
         {tasks.length === 0 ? (
-          <li className="py-3 text-sm text-muted">{empty}</li>
+          <li className="py-2 text-sm text-muted">{empty}</li>
         ) : (
           tasks.map((task) => (
             <TaskItem

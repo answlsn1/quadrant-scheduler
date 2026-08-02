@@ -1,41 +1,69 @@
 @import "tailwindcss";
 
 /*
- * 1단계는 기반만 깐다. 색·타이포·터치 타겟 등 본격 디자인은 3단계.
- * 다크 기본만 미리 고정해 둔다 (작업지시서 3단계 1항).
+ * 3단계 팔레트 — 시안 1안 확정본 (2026-08-02).
+ *
+ * 색은 장식이 아니라 정보다. 화면을 읽지 않고 색만 봐도 무엇을 해야 하는지
+ * 알아야 한다. 그래서 1번만 채도가 높고, 4번은 배경에 잠긴다.
+ * 버릴 것이 눈에 띄면 안 되기 때문이다.
  */
 :root {
-  --background: #0b0b0d;
-  --foreground: #ededed;
-  --muted: #8b8b93;
-  --border: #26262c;
-  --accent: #e5e5e7;
+  --background: #0a0a0c; /* 순수 검정 대신 미세한 청색 편향 */
+  --surface: #131318;
+  --foreground: #e8e8ea;
+  --muted: #7c7c85;
+  --border: #232329;
+
+  --q1: #ff5e3a; /* 지금 한다 — 불의 색 */
+  --q2: #6b7a99; /* 몰아서 처리 — 잡무, 채도를 낮춰 시선을 뺏지 않는다 */
+  --q3: #3dd6c0; /* 일정에 박제 — 승부처. 1번과 색상환 반대편 */
+  --q4: #3a3a42; /* 버린다 — 배경에 잠긴다 */
+
+  --warn: #f5b942; /* 미배치·지남 전용. 사분면 색과 겹치지 않게 분리 */
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 html {
   color-scheme: dark;
-  /* PWA 전체화면에서 노치·홈인디케이터 영역 확보 */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  /* 하단 고정 입력창이 있는 화면에서 바운스 스크롤이 바를 들썩이게 하지 않는다 */
+  overscroll-behavior-y: none;
+}
+
+/*
+ * 앱 셸. 안전영역 여백을 html이 아니라 여기서 처리한다.
+ * html에 padding을 주면 100dvh 자식과 합쳐져 세로 오버플로가 생긴다.
+ */
+.app-shell {
+  /* min-height가 아니라 height. 안쪽 목록만 스크롤하고 하단 바는 고정된다 */
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 하단 바는 홈 인디케이터 위로 자기 여백을 직접 확보한다 */
+.bottom-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
 }
 
 /*
  * iOS Safari는 폰트가 16px 미만인 입력에 포커스하면 화면을 확대한다.
- * 확대되면 캡처 흐름이 끊기므로(5초 룰) 확대 자체를 막는 대신 16px을 보장한다.
+ * 확대되면 캡처 흐름이 끊기므로(5초 룰) 16px을 보장한다.
  * user-scalable=no로 막지 않는 이유는 접근성 때문이다.
  */
 input,
@@ -43,4 +71,19 @@ textarea,
 select,
 button {
   font-size: 16px;
+}
+
+/* 키보드 포커스는 항상 보이게 */
+:focus-visible {
+  outline: 2px solid var(--q3);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

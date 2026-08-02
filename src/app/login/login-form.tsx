@@ -42,7 +42,7 @@ export function LoginForm({ next }: { next: string }) {
         type="button"
         onClick={signInWithGoogle}
         disabled={!hydrated || pending}
-        className="flex items-center justify-center gap-2.5 rounded-lg bg-foreground px-4 py-3.5 font-medium text-background disabled:opacity-50"
+        className="flex min-h-[52px] items-center justify-center gap-2.5 rounded-xl bg-foreground px-4 font-medium text-background disabled:opacity-50"
       >
         <GoogleMark />
         {pending ? '구글로 이동 중' : '구글로 로그인'}

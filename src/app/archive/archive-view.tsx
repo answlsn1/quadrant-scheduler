@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { AppNav } from '@/components/app-nav'
 import { Toast } from '@/components/toast'
+import { quadrantColor } from '@/lib/quadrant'
 import { formatDate, isInbox, type Task } from '@/lib/tasks'
 import { useTasks } from '@/lib/use-tasks'
 
@@ -18,20 +19,21 @@ export function ArchiveView() {
   const [filter, setFilter] = useState<Filter>('done')
 
   const inboxCount = tasks.filter(isInbox).length
-  const items = tasks.filter((t) => t.status === filter)
-  const groups = groupByDay(items, filter)
+  const doneCount = tasks.filter((t) => t.status === 'done').length
+  const droppedCount = tasks.filter((t) => t.status === 'dropped').length
+  const groups = groupByDay(tasks.filter((t) => t.status === filter), filter)
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <main className="flex flex-1 flex-col px-5 pt-8">
-        <h1 className="text-xl font-medium">아카이브</h1>
+    <div className="app-shell flex flex-col">
+      <main className="flex-1 overflow-y-auto px-4 pt-6">
+        <h1 className="text-xl font-semibold tracking-tight">기록</h1>
 
         <div className="mt-4 flex gap-2">
           <Tab active={filter === 'done'} onClick={() => setFilter('done')}>
-            완료 {tasks.filter((t) => t.status === 'done').length}
+            완료 {doneCount}
           </Tab>
           <Tab active={filter === 'dropped'} onClick={() => setFilter('dropped')}>
-            버림 {tasks.filter((t) => t.status === 'dropped').length}
+            버림 {droppedCount}
           </Tab>
         </div>
 
@@ -42,15 +44,18 @@ export function ArchiveView() {
             {filter === 'done' ? '완료한 것 없음.' : '버린 것 없음.'}
           </p>
         ) : (
-          <div className="mt-6 flex flex-col gap-6 pb-8">
+          <div className="mt-6 flex flex-col gap-5 pb-6">
             {groups.map(([day, dayTasks]) => (
               <section key={day}>
-                <h2 className="text-xs text-muted">{formatDate(day)}</h2>
-                <ul className="mt-2 flex flex-col gap-2">
+                <h2 className="text-[11px] text-muted">{formatDate(day)}</h2>
+                <ul className="mt-2 flex flex-col gap-1.5">
                   {dayTasks.map((task) => (
-                    <li key={task.id} className="flex gap-2 text-sm">
-                      <span className="text-xs text-muted">{task.quadrant}</span>
-                      <span className={filter === 'dropped' ? 'text-muted' : undefined}>
+                    <li
+                      key={task.id}
+                      style={{ borderLeftColor: quadrantColor(task.quadrant) }}
+                      className="rounded-lg border-l-[3px] bg-surface px-3 py-2.5 text-sm"
+                    >
+                      <span className={filter === 'dropped' ? 'text-muted line-through' : undefined}>
                         {task.title}
                       </span>
                     </li>
@@ -102,7 +107,8 @@ function Tab({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 text-sm ${
+      aria-pressed={active}
+      className={`min-h-[44px] rounded-xl border px-4 text-sm tabular-nums ${
         active ? 'border-foreground text-foreground' : 'border-border text-muted'
       }`}
     >

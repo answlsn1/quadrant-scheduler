@@ -26,6 +26,12 @@ export interface QuadrantSpec {
   examples: string
   /** 보드 2×2에서의 자리. 참고 슬라이드와 동일: 좌상 1, 우상 3, 좌하 2, 우하 4 */
   boardCell: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  /**
+   * 이 칸의 색을 담은 CSS 변수 이름. 값은 globals.css에 있다.
+   * 데이터로 결정되는 색이라 Tailwind 클래스 대신 인라인 style로 쓴다
+   * (동적 클래스명은 Tailwind가 추출하지 못한다).
+   */
+  colorVar: string
 }
 
 export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
@@ -35,6 +41,7 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     verb: '지금 한다',
     examples: '긴급 업무, 마감 임박, 돌발상황',
     boardCell: 'top-left',
+    colorVar: '--q1',
   },
   2: {
     id: 2,
@@ -42,6 +49,7 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     verb: '몰아서 처리',
     examples: '상시 보고, 급한 부탁, 즉답 불필요 메시지',
     boardCell: 'bottom-left',
+    colorVar: '--q2',
   },
   3: {
     id: 3,
@@ -49,6 +57,7 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     verb: '일정에 박제',
     examples: '말씀·자기계발·건강·장기계획',
     boardCell: 'top-right',
+    colorVar: '--q3',
   },
   4: {
     id: 4,
@@ -56,7 +65,16 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     verb: '버린다',
     examples: '의미 없는 유튜브, 습관적 서핑, 뒷담화',
     boardCell: 'bottom-right',
+    colorVar: '--q4',
   },
+}
+
+/**
+ * `var(--q3)` 형태로 바로 쓸 수 있게.
+ * DB에서 오는 quadrant는 smallint라 number로 넘어오므로 넓게 받고 안에서 좁힌다.
+ */
+export function quadrantColor(quadrant: number | null | undefined): string {
+  return isQuadrant(quadrant) ? `var(${QUADRANT_SPEC[quadrant].colorVar})` : 'var(--border)'
 }
 
 /** 보드 2×2 렌더 순서 (좌상 → 우상 → 좌하 → 우하) */
