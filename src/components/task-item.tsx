@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { quadrantColor } from '@/lib/quadrant'
 import { formatDate, todayISO, type Task } from '@/lib/tasks'
 
-/** 체크가 차오르는 걸 눈으로 보고 나서 목록에서 빠지게 하는 시간 */
+/** 완료 표시를 눈으로 보고 나서 목록에서 빠지게 하는 시간 */
 const COMPLETE_ANIM_MS = 240
 
 type Props = {
@@ -15,18 +15,30 @@ type Props = {
   onReschedule: (id: string, date: string | null) => void
 }
 
+/**
+ * 항목을 탭하면 동작이 펼쳐진다. (3단계 보완 — 사장님 피드백)
+ *
+ * 처음에는 좌측 ◯(완료)와 우측 ···(더보기)로 만들었는데,
+ * "이 버튼이 정확히 뭘 하는 건지 모르겠다"는 지적을 받았다. 맞는 지적이다.
+ * AGENTS.md에 "아이콘 대신 글씨를 쓴다 — 아이콘은 뜻을 배워야 한다"고
+ * 적어놓고 정작 항목 줄에는 기호를 썼다.
+ *
+ * 이제 평소에는 제목만 보이고, 탭하면 글씨가 적힌 큰 버튼이 나온다.
+ * 작업지시서 2장의 "항목 탭 → 완료/버림/날짜 변경"과도 맞는다.
+ */
 export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
+  const [open, setOpen] = useState(false)
   const [completing, setCompleting] = useState(false)
-  const [actionsOpen, setActionsOpen] = useState(false)
 
-  const color = quadrantColor(task.quadrant)
   const isThree = task.quadrant === 3
+  const color = completing ? 'var(--q3)' : quadrantColor(task.quadrant)
   const overdue = Boolean(
     isThree && task.scheduled_date && task.scheduled_date < todayISO(),
   )
 
   function handleComplete() {
     if (completing) return
+    setOpen(false)
     setCompleting(true)
 
     const reduced =
@@ -38,45 +50,20 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
   return (
     <li
       style={{ borderLeftColor: color }}
-      className={`mb-1.5 rounded-xl border-l-[3px] bg-surface transition-opacity duration-200 ${
-        completing ? 'opacity-40' : 'opacity-100'
+      className={`mb-1.5 overflow-hidden rounded-xl border-l-[3px] bg-surface transition-all duration-200 ${
+        completing ? 'opacity-35' : 'opacity-100'
       }`}
     >
-      <div className="flex items-center gap-1">
-        {/* 완료는 가장 자주 쓰는 동작이라 한 번에 닿게 둔다. 48px 타겟. */}
-        <button
-          type="button"
-          onClick={handleComplete}
-          aria-label={`완료: ${task.title}`}
-          className="flex h-12 w-12 shrink-0 items-center justify-center"
-        >
-          <span
-            style={
-              completing
-                ? { borderColor: 'var(--q3)', background: 'var(--q3)' }
-                : undefined
-            }
-            className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] border-border transition-all duration-200"
-          >
-            {completing ? (
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                <path
-                  d="M2.5 7.2 5.7 10.3 11.5 4"
-                  fill="none"
-                  stroke="var(--background)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : null}
-          </span>
-        </button>
-
-        <div className="min-w-0 flex-1 py-3">
-          <p className="text-sm leading-snug">{task.title}</p>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex min-h-[52px] w-full items-center gap-3 px-3.5 py-3 text-left"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm leading-snug">{task.title}</span>
           {isThree ? (
-            <p className="mt-1 text-xs">
+            <span className="mt-1 block text-xs">
               {task.scheduled_date ? (
                 <span className={overdue ? 'text-warn' : 'text-muted'}>
                   {formatDate(task.scheduled_date)}
@@ -85,40 +72,45 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
               ) : (
                 <span className="text-warn">미배치</span>
               )}
-            </p>
+            </span>
           ) : null}
-        </div>
+        </span>
 
-        {/* 되돌리기 어려운 버림은 한 단계 뒤로 숨긴다. 완료 버튼 옆 오폭을 막는다. */}
-        <button
-          type="button"
-          onClick={() => setActionsOpen((v) => !v)}
-          aria-label={`${task.title} 다른 동작`}
-          aria-expanded={actionsOpen}
-          className="flex h-12 w-12 shrink-0 items-center justify-center text-muted"
+        <span
+          aria-hidden="true"
+          className={`shrink-0 text-xs text-muted transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
         >
-          <span className="tracking-widest">···</span>
-        </button>
-      </div>
+          ⌄
+        </span>
+      </button>
 
-      {actionsOpen ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2.5">
+      {open ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border p-2.5">
+          <button
+            type="button"
+            onClick={handleComplete}
+            className="min-h-[48px] flex-1 rounded-lg border border-[color-mix(in_srgb,var(--q3)_45%,transparent)] bg-[color-mix(in_srgb,var(--q3)_12%,transparent)] px-4 text-sm font-medium text-[var(--q3)]"
+          >
+            완료
+          </button>
+          <button
+            type="button"
+            onClick={() => onDrop(task.id)}
+            className="min-h-[48px] flex-1 rounded-lg border border-border px-4 text-sm text-muted"
+          >
+            버린다
+          </button>
           {isThree ? (
             <input
               type="date"
               value={task.scheduled_date ?? ''}
               onChange={(e) => onReschedule(task.id, e.target.value || null)}
               aria-label="날짜 변경"
-              className="min-h-[44px] rounded-lg border border-border bg-transparent px-3 text-sm"
+              className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
             />
           ) : null}
-          <button
-            type="button"
-            onClick={() => onDrop(task.id)}
-            className="ml-auto min-h-[44px] rounded-lg border border-border px-4 text-sm text-muted"
-          >
-            버린다
-          </button>
         </div>
       ) : null}
     </li>

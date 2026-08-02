@@ -10,6 +10,7 @@ import {
   type Quadrant,
 } from '@/lib/quadrant'
 import { isActive, isInbox, type Task } from '@/lib/tasks'
+import { useArchive } from '@/lib/use-archive'
 import { useTasks } from '@/lib/use-tasks'
 
 /**
@@ -18,11 +19,12 @@ import { useTasks } from '@/lib/use-tasks'
  */
 export function BoardView() {
   const { tasks, loading, toast, complete, drop, reschedule } = useTasks()
+  // 4번 칸은 "버린" 칸이라 active가 존재할 수 없다. 버린 것은 기록 쪽에 있다.
+  const { items: archived } = useArchive()
 
   const active = tasks.filter(isActive)
   const inboxCount = tasks.filter(isInbox).length
-  // 4번 칸은 "버린" 칸이라 active가 없다. 최근 버린 것을 참고용으로 보여준다.
-  const recentlyDropped = tasks.filter((t) => t.status === 'dropped').slice(0, 8)
+  const recentlyDropped = archived.filter((t) => t.status === 'dropped').slice(0, 8)
 
   return (
     <div className="app-shell flex flex-col">

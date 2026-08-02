@@ -33,12 +33,19 @@ export function useTasks() {
     toastTimer.current = setTimeout(() => setToast(null), 3500)
   }, [])
 
+  /*
+   * 인박스와 활성만 받는다. 완료·버림까지 한꺼번에 받으면
+   * 기록이 쌓일수록 상한(1000)에 걸려 오래된 활성 항목이 조용히 목록에서
+   * 밀려난다. 예를 들어 반년 뒤 날짜를 박아둔 3번은 created_at이 오래돼서
+   * 가장 먼저 잘려나간다. 처리해야 할 것이 사라지는 셈이라 그냥 둘 수 없다.
+   * 기록 화면은 useArchive가 따로 받는다.
+   */
   const reload = useCallback(async () => {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
+      .in('status', ['inbox', 'active'])
       .order('created_at', { ascending: false })
-      .limit(1000)
 
     if (error) {
       notify('목록을 불러오지 못했습니다.')

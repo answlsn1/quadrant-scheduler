@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { AppNav } from '@/components/app-nav'
 import { Toast } from '@/components/toast'
 import { quadrantColor } from '@/lib/quadrant'
-import { formatDate, isInbox, type Task } from '@/lib/tasks'
+import { formatDate, todayISO, type Task } from '@/lib/tasks'
+import { useArchive } from '@/lib/use-archive'
 import { useTasks } from '@/lib/use-tasks'
 
 type Filter = 'done' | 'dropped'
@@ -15,13 +16,42 @@ type Filter = 'done' | 'dropped'
  * 4번은 "죄책감 없이 기록하고 버린다"가 취지라, 버린 것도 지우지 않고 남긴다.
  */
 export function ArchiveView() {
-  const { tasks, loading, toast } = useTasks()
+  const { tasks } = useTasks()
+  const { items, counts, loading, error, truncated, fetchAllForExport } = useArchive()
   const [filter, setFilter] = useState<Filter>('done')
+  const [exportState, setExportState] = useState<'idle' | 'working' | 'failed'>('idle')
 
-  const inboxCount = tasks.filter(isInbox).length
-  const doneCount = tasks.filter((t) => t.status === 'done').length
-  const droppedCount = tasks.filter((t) => t.status === 'dropped').length
-  const groups = groupByDay(tasks.filter((t) => t.status === filter), filter)
+  const inboxCount = tasks.filter((t) => t.status === 'inbox').length
+  const groups = groupByDay(items.filter((t) => t.status === filter), filter)
+
+  async function handleExport() {
+    setExportState('working')
+    const all = await fetchAllForExport()
+
+    if (!all) {
+      setExportState('failed')
+      return
+    }
+
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          { app: '사분면 스케줄러', exportedAt: new Date().toISOString(), count: all.length, tasks: all },
+          null,
+          2,
+        ),
+      ],
+      { type: 'application/json' },
+    )
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `사분면-백업-${todayISO()}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    setExportState('idle')
+  }
 
   return (
     <div className="app-shell flex flex-col">
@@ -30,10 +60,10 @@ export function ArchiveView() {
 
         <div className="mt-4 flex gap-2">
           <Tab active={filter === 'done'} onClick={() => setFilter('done')}>
-            완료 {doneCount}
+            완료 {counts.done}
           </Tab>
           <Tab active={filter === 'dropped'} onClick={() => setFilter('dropped')}>
-            버림 {droppedCount}
+            버림 {counts.dropped}
           </Tab>
         </div>
 
@@ -44,7 +74,7 @@ export function ArchiveView() {
             {filter === 'done' ? '완료한 것 없음.' : '버린 것 없음.'}
           </p>
         ) : (
-          <div className="mt-6 flex flex-col gap-5 pb-6">
+          <div className="mt-6 flex flex-col gap-5">
             {groups.map(([day, dayTasks]) => (
               <section key={day}>
                 <h2 className="text-[11px] text-muted">{formatDate(day)}</h2>
@@ -65,9 +95,32 @@ export function ArchiveView() {
             ))}
           </div>
         )}
+
+        {truncated ? (
+          <p className="mt-6 text-xs text-muted">
+            최근 것부터 일부만 보여주고 있다. 전부는 아래 내보내기로 받는다.
+          </p>
+        ) : null}
+
+        {/* 자가도구의 최소 안전장치. 서버를 거치지 않고 브라우저에서 바로 만든다. */}
+        <div className="mt-8 border-t border-border pt-5 pb-6">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportState === 'working'}
+            className="min-h-[48px] w-full rounded-xl border border-border px-4 text-sm text-muted disabled:opacity-50"
+          >
+            {exportState === 'working' ? '모으는 중' : '전체 내보내기 (JSON)'}
+          </button>
+          {exportState === 'failed' ? (
+            <p role="alert" className="mt-2 text-xs text-[var(--q1)]">
+              내보내기에 실패했다. 다시 시도해라.
+            </p>
+          ) : null}
+        </div>
       </main>
 
-      <Toast message={toast} />
+      <Toast message={error} />
       <AppNav inboxCount={inboxCount} />
     </div>
   )
