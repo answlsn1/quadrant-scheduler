@@ -1,31 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { HomeView } from './home-view'
 
-/**
- * 홈(오늘) — 1단계에서는 빈 홈이다.
- * 캡처 입력창·인박스 뱃지·미배치 3번 카운터는 2단계에서 붙인다.
+/*
+ * 서버에서 데이터를 읽지 않는다 — 그래야 이 페이지가 정적으로 미리 렌더되어
+ * CDN에서 즉시 내려오고, 입력창이 서버 왕복 없이 바로 뜬다. 5초 룰의 핵심이다.
+ * 목록은 입력창이 뜬 뒤에 클라이언트에서 채운다.
  */
-export default async function HomePage() {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const email = data?.claims?.email
-
-  return (
-    <main className="flex flex-1 flex-col px-6 py-10">
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-xl font-medium">오늘</h1>
-        <form action="/logout" method="post">
-          <button type="submit" className="text-xs text-muted underline">
-            로그아웃
-          </button>
-        </form>
-      </header>
-
-      <p className="mt-2 text-xs text-muted">{email}</p>
-
-      <div className="mt-16 border-t border-border pt-6 text-sm text-muted">
-        <p>1단계 — 기반만 깔린 상태.</p>
-        <p className="mt-1">캡처 입력창과 사분면 분류는 2단계에서 붙는다.</p>
-      </div>
-    </main>
-  )
+export default function HomePage() {
+  return <HomeView />
 }
