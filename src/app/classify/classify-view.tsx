@@ -61,7 +61,7 @@ export function ClassifyView() {
         <div className="shrink-0 px-4 pb-2">
           {awaitingDate ? (
             <div className="flex flex-col gap-2.5">
-              <p className="text-[13px] text-muted">언제 할지 박는다</p>
+              <p className="text-[13px] text-muted">언제 할지 정한다</p>
 
               <div className="grid grid-cols-3 gap-2">
                 <DateChip label="오늘" onClick={() => commitThree(todayISO())} />

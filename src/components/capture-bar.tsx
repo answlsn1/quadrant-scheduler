@@ -44,7 +44,7 @@ export function CaptureBar({
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}
-          placeholder="떠오른 것을 그냥 적는다"
+          placeholder="떠오르는 것을 그냥 적어보자"
           aria-label="캡처"
           className="min-h-[52px] w-full rounded-xl border border-border bg-surface py-3.5 pl-4 pr-14 caret-[var(--q3)] outline-none placeholder:text-muted focus:border-[var(--q3)]"
         />

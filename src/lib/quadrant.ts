@@ -54,7 +54,8 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
   3: {
     id: 3,
     axis: '중요 O / 급함 X',
-    verb: '일정에 박제',
+    // 원문은 "일정에 박제" — 2026-08-02 사장님 결정으로 표현만 순화. 의미(날짜를 정해야 끝난다)는 그대로다.
+    verb: '일정에 넣는다',
     examples: '말씀·자기계발·건강·장기계획',
     boardCell: 'top-right',
     colorVar: '--q3',

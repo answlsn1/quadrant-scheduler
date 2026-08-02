@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 import { AccountMenu } from '@/components/account-menu'
 import { AppNav } from '@/components/app-nav'
@@ -12,9 +13,27 @@ import { isActive, isInbox, isUnscheduledThree, todayISO, type Task } from '@/li
 import { useKeyboardInset } from '@/lib/use-keyboard-inset'
 import { useTasks } from '@/lib/use-tasks'
 
+/** 처음 안내 카드를 한 번 닫으면 다시 보여주지 않기 위한 로컬 플래그 */
+const INTRO_SEEN_KEY = 'sabun.intro.seen'
+
 export function HomeView() {
   const { tasks, loading, toast, capture, complete, drop, reschedule } = useTasks()
   const keyboardInset = useKeyboardInset()
+
+  /*
+   * 처음 온 사람용 안내 (사장님 요청 2026-08-02 — 지인 배포라 앱 설명이 필요하다).
+   * 항목이 하나라도 생기면 자연히 사라지고, 닫으면 다시 안 나온다.
+   * SSR에서는 localStorage가 없으므로 "본 것"으로 시작해 마운트 후 판별한다 — 깜빡임 방지.
+   */
+  const [introSeen, setIntroSeen] = useState(true)
+  useEffect(() => {
+    setIntroSeen(localStorage.getItem(INTRO_SEEN_KEY) === '1')
+  }, [])
+
+  function dismissIntro() {
+    localStorage.setItem(INTRO_SEEN_KEY, '1')
+    setIntroSeen(true)
+  }
 
   const today = todayISO()
   const inbox = tasks.filter(isInbox)
@@ -50,8 +69,39 @@ export function HomeView() {
           >
             <span>미배치 3번</span>
             <b className="tabular-nums">{unscheduledThree.length}</b>
-            <span className="ml-auto">날짜 박기 →</span>
+            <span className="ml-auto">날짜 정하기 →</span>
           </Link>
+        ) : null}
+
+        {!loading && tasks.length === 0 && !introSeen ? (
+          <div className="mt-4 rounded-xl border border-border bg-surface p-4">
+            <p className="text-sm font-medium">처음이라면, 이렇게 쓴다</p>
+            <ol className="mt-2.5 flex list-none flex-col gap-1.5 text-[13px] leading-relaxed text-muted">
+              <li>
+                <b className="text-foreground">1</b> 아래 입력창에 떠오르는 것을 그냥 적는다 —
+                분류는 나중에
+              </li>
+              <li>
+                <b className="text-foreground">2</b> 시간 날 때 <b className="text-foreground">분류</b> 탭에서
+                네 칸 중 하나로 나눈다
+              </li>
+              <li>
+                <b className="text-foreground">3</b> 이 화면에서 오늘 할 것을 실행한다
+              </li>
+            </ol>
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+              <Link href="/guide" className="text-[13px] text-[var(--q3)] underline">
+                자세한 사용법
+              </Link>
+              <button
+                type="button"
+                onClick={dismissIntro}
+                className="min-h-[40px] px-2 text-[13px] text-muted"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
         ) : null}
 
         {loading ? (
@@ -70,7 +120,7 @@ export function HomeView() {
             <Section
               quadrant={3}
               tasks={dueThree}
-              empty="오늘 박제된 것 없음."
+              empty="오늘 일정에 넣어둔 것 없음."
               onComplete={complete}
               onDrop={drop}
               onReschedule={reschedule}

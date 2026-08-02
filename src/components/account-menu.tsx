@@ -67,7 +67,14 @@ export function AccountMenu() {
           <p className="truncate text-sm font-medium">{name ?? '이름 없음'}</p>
           <p className="mt-0.5 truncate text-xs text-muted">{email ?? ''}</p>
 
-          <form action="/logout" method="post" className="mt-3 border-t border-border pt-3">
+          <a
+            href="/guide"
+            className="mt-3 flex min-h-[44px] items-center justify-center rounded-lg border border-border text-sm text-muted transition-colors duration-150 hover:border-muted hover:text-foreground"
+          >
+            앱 사용법
+          </a>
+
+          <form action="/logout" method="post" className="mt-2 border-t border-border pt-2">
             <button
               type="submit"
               className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-border text-sm text-muted transition-colors duration-150 hover:border-muted hover:text-foreground"
