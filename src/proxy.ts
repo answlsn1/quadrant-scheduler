@@ -17,7 +17,13 @@ import type { Database } from '@/types/database'
  * /auth/callback은 아직 세션이 없는 상태로 들어오므로 반드시 열어둬야 한다.
  * 막으면 구글에서 돌아온 code가 교환되기도 전에 /login으로 튕긴다.
  */
-const PUBLIC_PATHS = ['/login', '/auth']
+const PUBLIC_PATHS = [
+  '/login',
+  '/auth',
+  // 배포 식별자만 돌려준다. 인증에 걸리면 세션 만료 시 JSON 대신 로그인 HTML이
+  // 돌아와 갱신 확인이 조용히 망가진다.
+  '/api/build',
+]
 
 /**
  * 이미 로그인한 상태로 들어오면 홈으로 보낼 경로.

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { AppUpdater } from "@/components/app-updater";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,7 +57,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       {/* 화면 높이는 각 뷰의 .app-shell이 100dvh로 잡는다 */}
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        <AppUpdater />
+      </body>
     </html>
   );
 }
