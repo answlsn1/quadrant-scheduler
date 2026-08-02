@@ -1,96 +1,81 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 
 import { createClient } from '@/lib/supabase/client'
 
 /**
- * 회원가입 UI는 없다. 계정은 Supabase 대시보드에서 시드로 1개만 만든다.
- * (작업지시서 3장 — 지누 1인용 자가도구)
+ * 구글 로그인 전용. 비밀번호도, 회원가입도 없다.
+ * 계정은 `src/lib/auth.ts`의 허용 목록에 있는 하나뿐이다.
  */
 export function LoginForm({ next }: { next: string }) {
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
-  /*
-   * 하이드레이션이 끝나기 전까지 제출을 막는다.
-   * 이 form에는 action이 없어서, onSubmit 핸들러가 붙기 전에 버튼이 눌리면
-   * 브라우저가 현재 URL로 네이티브 GET 제출을 해버린다.
-   * 그러면 비밀번호가 쿼리스트링(/login?email=...&password=...)에 실려
-   * 브라우저 기록과 서버 접근 로그에 남는다. 실제로 재현됨.
-   */
+  // 하이드레이션 전에는 눌러도 아무 일이 없으므로 버튼을 잠가 둔다.
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function signInWithGoogle() {
     if (pending) return
-
-    const form = new FormData(event.currentTarget)
-    const email = String(form.get('email') ?? '').trim()
-    const password = String(form.get('password') ?? '')
-
     setPending(true)
     setError(null)
 
     const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
     })
 
-    if (signInError) {
-      setError(
-        signInError.message === 'Invalid login credentials'
-          ? '이메일 또는 비밀번호가 맞지 않습니다.'
-          : signInError.message,
-      )
+    // 여기까지 왔다는 건 구글로 넘어가지 못했다는 뜻이다.
+    if (oauthError) {
+      setError(`구글 로그인을 시작하지 못했습니다. ${oauthError.message}`)
       setPending(false)
-      return
     }
-
-    // 하드 내비게이션. 방금 심어진 세션 쿠키를 서버(proxy.ts)가 확실히 보게 한다.
-    window.location.replace(next)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3">
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted">이메일</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="username"
-          autoFocus
-          required
-          className="rounded-lg border border-border bg-transparent px-3 py-3 outline-none focus:border-foreground"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted">비밀번호</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="rounded-lg border border-border bg-transparent px-3 py-3 outline-none focus:border-foreground"
-        />
-      </label>
+    <div className="mt-10 flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={signInWithGoogle}
+        disabled={!hydrated || pending}
+        className="flex items-center justify-center gap-2.5 rounded-lg bg-foreground px-4 py-3.5 font-medium text-background disabled:opacity-50"
+      >
+        <GoogleMark />
+        {pending ? '구글로 이동 중' : '구글로 로그인'}
+      </button>
 
       {error ? (
         <p role="alert" className="text-sm text-red-400">
           {error}
         </p>
       ) : null}
+    </div>
+  )
+}
 
-      <button
-        type="submit"
-        disabled={!hydrated || pending}
-        className="mt-2 rounded-lg bg-foreground px-3 py-3 font-medium text-background disabled:opacity-50"
-      >
-        {pending ? '확인 중' : '로그인'}
-      </button>
-    </form>
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.7-2 5-4.4 6.6v5.5h7.1c4.1-3.8 6.6-9.4 6.6-16.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 46c5.9 0 10.9-2 14.5-5.4l-7.1-5.5c-2 1.3-4.5 2.1-7.4 2.1-5.7 0-10.5-3.8-12.2-9H4.5v5.7C8.1 41.1 15.4 46 24 46z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M11.8 28.2c-.4-1.3-.7-2.7-.7-4.2s.2-2.9.7-4.2v-5.7H4.5C3 17.1 2.1 20.4 2.1 24s.9 6.9 2.4 9.9l7.3-5.7z"
+      />
+      <path
+        fill="#EA4335"
+        d="M24 10.8c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.2 29.9 2 24 2 15.4 2 8.1 6.9 4.5 14.1l7.3 5.7c1.7-5.2 6.5-9 12.2-9z"
+      />
+    </svg>
   )
 }

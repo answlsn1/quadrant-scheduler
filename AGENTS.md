@@ -23,6 +23,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 "일반적인 매트릭스와 다르다"는 이유로 절대 교정하지 마라.
 정의는 `src/lib/quadrant.ts` 한 곳에만 둔다.
 
+## 인증 — 구글 로그인 전용, 회원가입 없음
+
+계정은 `answlsn1@gmail.com` 하나뿐이다. **회원가입 화면을 만들지 마라.**
+구글 로그인은 그대로 두면 아무 계정이나 들어오는 문이고, 그건 스코프 아웃의 "다중 사용자"다.
+
+허용 계정은 두 곳에 있고 **반드시 같이 고쳐야 한다**:
+
+- `src/lib/auth.ts`의 `ALLOWED_EMAILS` — `/auth/callback`에서 즉시 차단 (사용자에게 보이는 1차 방어)
+- DB 함수 `public.is_allowed_user()` — `tasks` RLS 정책에 물려 있는 **실제 방어선**
+
+콜백 차단만으로는 부족하다. PKCE code를 가로챈 쪽이 스스로 세션을 만들 여지가 있어서,
+DB에서 한 번 더 막지 않으면 allowlist가 장식이 된다.
+
 ## 설계 원칙 3개
 
 1. **입력 5초 룰** — 앱 실행부터 항목 저장까지 5초 이내. 홈 화면이 곧 입력창(autofocus)이다.

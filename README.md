@@ -15,7 +15,10 @@
 
 ## 스택
 
-Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Auth + Postgres + RLS) · Vercel · PWA
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Google OAuth + Postgres + RLS) · Vercel · PWA
+
+인증은 구글 로그인 전용이고 회원가입은 없다. 허용 계정 1개를 앱(`src/lib/auth.ts`)과
+DB(`public.is_allowed_user()`) 양쪽에서 대조한다.
 
 ## 로컬 실행
 

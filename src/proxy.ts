@@ -12,8 +12,18 @@ import type { Database } from '@/types/database'
  *  2. 인증 가드 — 비로그인은 /login으로, 로그인 상태로 /login 접근은 홈으로
  */
 
-/** 로그인 없이 접근 가능한 경로 */
-const PUBLIC_PATHS = ['/login']
+/**
+ * 로그인 없이 접근 가능한 경로.
+ * /auth/callback은 아직 세션이 없는 상태로 들어오므로 반드시 열어둬야 한다.
+ * 막으면 구글에서 돌아온 code가 교환되기도 전에 /login으로 튕긴다.
+ */
+const PUBLIC_PATHS = ['/login', '/auth']
+
+/**
+ * 이미 로그인한 상태로 들어오면 홈으로 보낼 경로.
+ * /auth/callback은 여기 넣지 않는다 — 넣으면 재로그인 시 code가 교환되기 전에 튕겨나간다.
+ */
+const SIGNED_IN_REDIRECT_PATHS = ['/login']
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
@@ -49,15 +59,14 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims)
 
   const { pathname } = request.nextUrl
-  const isPublic = PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  )
+  const matches = (paths: string[]) =>
+    paths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
-  if (!signedIn && !isPublic) {
+  if (!signedIn && !matches(PUBLIC_PATHS)) {
     return redirectKeepingCookies(request, response, '/login', pathname)
   }
 
-  if (signedIn && isPublic) {
+  if (signedIn && matches(SIGNED_IN_REDIRECT_PATHS)) {
     return redirectKeepingCookies(request, response, '/')
   }
 
