@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { quadrantColor } from '@/lib/quadrant'
-import { formatDate, todayISO, type Task } from '@/lib/tasks'
+import { formatSchedule, scheduleDeadline, todayISO, type Task } from '@/lib/tasks'
 
 /** 완료 표시를 눈으로 보고 나서 목록에서 빠지게 하는 시간 */
 const COMPLETE_ANIM_MS = 240
@@ -12,19 +12,13 @@ type Props = {
   task: Task
   onComplete: (id: string) => void
   onDrop: (id: string) => void
-  onReschedule: (id: string, date: string | null) => void
+  onReschedule: (id: string, start: string | null, end: string | null) => void
 }
 
 /**
- * 항목을 탭하면 동작이 펼쳐진다. (3단계 보완 — 사장님 피드백)
- *
- * 처음에는 좌측 ◯(완료)와 우측 ···(더보기)로 만들었는데,
- * "이 버튼이 정확히 뭘 하는 건지 모르겠다"는 지적을 받았다. 맞는 지적이다.
- * AGENTS.md에 "아이콘 대신 글씨를 쓴다 — 아이콘은 뜻을 배워야 한다"고
- * 적어놓고 정작 항목 줄에는 기호를 썼다.
- *
- * 이제 평소에는 제목만 보이고, 탭하면 글씨가 적힌 큰 버튼이 나온다.
- * 작업지시서 2장의 "항목 탭 → 완료/버림/날짜 변경"과도 맞는다.
+ * 항목을 탭하면 동작이 펼쳐진다.
+ * 평소에는 제목만 보이고, 탭하면 글씨가 적힌 큰 버튼이 나온다.
+ * 3번은 날짜를 기간(시작~끝)으로도 고칠 수 있다. 끝을 비우면 하루짜리다.
  */
 export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
   const [open, setOpen] = useState(false)
@@ -32,9 +26,9 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
 
   const isThree = task.quadrant === 3
   const color = completing ? 'var(--q3)' : quadrantColor(task.quadrant)
-  const overdue = Boolean(
-    isThree && task.scheduled_date && task.scheduled_date < todayISO(),
-  )
+  const schedule = formatSchedule(task)
+  const deadline = scheduleDeadline(task)
+  const overdue = Boolean(isThree && deadline && deadline < todayISO())
 
   function handleComplete() {
     if (completing) return
@@ -64,9 +58,9 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
           <span className="block text-sm leading-snug">{task.title}</span>
           {isThree ? (
             <span className="mt-1 block text-xs">
-              {task.scheduled_date ? (
+              {schedule ? (
                 <span className={overdue ? 'text-warn' : 'text-muted'}>
-                  {formatDate(task.scheduled_date)}
+                  {schedule}
                   {overdue ? ' · 지남' : ''}
                 </span>
               ) : (
@@ -102,14 +96,41 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
           >
             버린다
           </button>
+
           {isThree ? (
-            <input
-              type="date"
-              value={task.scheduled_date ?? ''}
-              onChange={(e) => onReschedule(task.id, e.target.value || null)}
-              aria-label="날짜 변경"
-              className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
-            />
+            <div className="flex w-full items-center gap-2">
+              <label className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-[11px] text-muted">시작</span>
+                <input
+                  type="date"
+                  value={task.scheduled_date ?? ''}
+                  onChange={(e) =>
+                    // 시작을 지우면 끝도 함께 비운다 (끝만 남을 수 없다)
+                    onReschedule(
+                      task.id,
+                      e.target.value || null,
+                      e.target.value ? task.scheduled_end_date : null,
+                    )
+                  }
+                  aria-label="시작 날짜"
+                  className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
+                />
+              </label>
+              <label className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-[11px] text-muted">끝 (기간일 때만)</span>
+                <input
+                  type="date"
+                  value={task.scheduled_end_date ?? ''}
+                  min={task.scheduled_date ?? undefined}
+                  disabled={!task.scheduled_date}
+                  onChange={(e) =>
+                    onReschedule(task.id, task.scheduled_date, e.target.value || null)
+                  }
+                  aria-label="끝 날짜"
+                  className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm disabled:opacity-40"
+                />
+              </label>
+            </div>
           ) : null}
         </div>
       ) : null}

@@ -31,6 +31,23 @@ export function formatDate(iso: string): string {
   return `${m}월 ${d}일 (${weekday})`
 }
 
+/** 일정 표시 문자열. 기간이면 '8월 5일 (수) ~ 8월 10일 (월)' */
+export function formatSchedule(task: Task): string | null {
+  if (!task.scheduled_date) return null
+  if (!task.scheduled_end_date || task.scheduled_end_date === task.scheduled_date) {
+    return formatDate(task.scheduled_date)
+  }
+  return `${formatDate(task.scheduled_date)} ~ ${formatDate(task.scheduled_end_date)}`
+}
+
+/**
+ * 일정이 "지난" 기준일. 기간이면 끝 날짜다 —
+ * 기간 중에는 진행 중이지 늦은 게 아니다.
+ */
+export function scheduleDeadline(task: Task): string | null {
+  return task.scheduled_end_date ?? task.scheduled_date
+}
+
 export const isInbox = (t: Task) => t.status === 'inbox'
 export const isActive = (t: Task) => t.status === 'active'
 export const isArchived = (t: Task) => t.status === 'done' || t.status === 'dropped'

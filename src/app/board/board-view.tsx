@@ -69,7 +69,7 @@ function Cell({
   tasks: Task[]
   onComplete: (id: string) => void
   onDrop: (id: string) => void
-  onReschedule: (id: string, date: string | null) => void
+  onReschedule: (id: string, start: string | null, end: string | null) => void
 }) {
   const spec = QUADRANT_SPEC[quadrant]
   const color = quadrantColor(quadrant)

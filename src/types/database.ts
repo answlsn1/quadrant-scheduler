@@ -49,6 +49,7 @@ export type Database = {
           note: string | null
           quadrant: number | null
           scheduled_date: string | null
+          scheduled_end_date: string | null
           status: string
           title: string
           user_id: string
@@ -61,6 +62,7 @@ export type Database = {
           note?: string | null
           quadrant?: number | null
           scheduled_date?: string | null
+          scheduled_end_date?: string | null
           status?: string
           title: string
           user_id?: string
@@ -73,6 +75,7 @@ export type Database = {
           note?: string | null
           quadrant?: number | null
           scheduled_date?: string | null
+          scheduled_end_date?: string | null
           status?: string
           title?: string
           user_id?: string

@@ -126,6 +126,7 @@ export function useTasks() {
         quadrant: null,
         status: 'inbox',
         scheduled_date: null,
+        scheduled_end_date: null,
         created_at: new Date().toISOString(),
         completed_at: null,
         dropped_at: null,
@@ -143,14 +144,27 @@ export function useTasks() {
   /**
    * 분류. 4번은 강제 동사가 "버린다"이므로 active를 거치지 않고 바로 버린다.
    * 분류만 하고 멈추는 흐름을 만들지 않는다 (원칙 2).
+   * 3번은 기간(시작~끝)으로도 정할 수 있다. 끝이 없으면 하루짜리다.
    */
   const classify = useCallback(
-    (id: string, quadrant: Quadrant, scheduledDate?: string | null) => {
+    (
+      id: string,
+      quadrant: Quadrant,
+      scheduledDate?: string | null,
+      scheduledEndDate?: string | null,
+    ) => {
       const now = new Date().toISOString()
+      const start = scheduledDate ?? null
       const changes: Partial<Task> =
         quadrant === DROP_ON_CLASSIFY
           ? { quadrant, status: 'dropped', dropped_at: now }
-          : { quadrant, status: 'active', scheduled_date: scheduledDate ?? null }
+          : {
+              quadrant,
+              status: 'active',
+              scheduled_date: start,
+              // 시작 없이 끝만 있을 수 없다 (DB CHECK와 동일 규칙)
+              scheduled_end_date: start ? (scheduledEndDate ?? null) : null,
+            }
 
       return patch(id, changes, '분류를 저장하지 못했습니다.')
     },
@@ -178,8 +192,15 @@ export function useTasks() {
   )
 
   const reschedule = useCallback(
-    (id: string, scheduledDate: string | null) =>
-      patch(id, { scheduled_date: scheduledDate }, '날짜를 저장하지 못했습니다.'),
+    (id: string, scheduledDate: string | null, scheduledEndDate: string | null = null) =>
+      patch(
+        id,
+        {
+          scheduled_date: scheduledDate,
+          scheduled_end_date: scheduledDate ? scheduledEndDate : null,
+        },
+        '날짜를 저장하지 못했습니다.',
+      ),
     [patch],
   )
 
