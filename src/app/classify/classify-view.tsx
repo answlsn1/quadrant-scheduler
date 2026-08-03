@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { AppNav } from '@/components/app-nav'
 import { Toast } from '@/components/toast'
-import { QUADRANTS, QUADRANT_SPEC, quadrantColor, type Quadrant } from '@/lib/quadrant'
+import { QUADRANTS, QUADRANT_SPEC, quadrantColor, SCHEDULE_ON_CLASSIFY, type Quadrant } from '@/lib/quadrant'
 import { daysFromToday, isInbox, todayISO } from '@/lib/tasks'
 import { useTasks } from '@/lib/use-tasks'
 
@@ -37,8 +37,8 @@ export function ClassifyView() {
 
   function pick(quadrant: Quadrant) {
     if (!current) return
-    // 3번은 일정에 넣는 것이 강제 동사다. 날짜 단계를 한 번 거치게 한다.
-    if (quadrant === 3) {
+    // 2번은 일정에 넣는 것이 강제 동사다. 날짜 단계를 한 번 거치게 한다.
+    if (quadrant === SCHEDULE_ON_CLASSIFY) {
       setAwaitingDate(true)
       return
     }
@@ -53,7 +53,7 @@ export function ClassifyView() {
   ) {
     if (!current) return
     advanceSelection()
-    void classify(current.id, 3, start, end, time)
+    void classify(current.id, SCHEDULE_ON_CLASSIFY, start, end, time)
     setAwaitingDate(false)
     setStartDate('')
     setEndDate('')
@@ -91,7 +91,7 @@ export function ClassifyView() {
                     aria-current={selected ? 'true' : undefined}
                     className={`w-full rounded-xl border px-3.5 py-3 text-left text-sm leading-snug transition-colors duration-150 ${
                       selected
-                        ? 'border-[color-mix(in_srgb,var(--q3)_55%,transparent)] bg-[color-mix(in_srgb,var(--q3)_9%,transparent)] text-foreground'
+                        ? 'border-[color-mix(in_srgb,var(--accent)_55%,transparent)] bg-[color-mix(in_srgb,var(--accent)_9%,transparent)] text-foreground'
                         : 'border-border text-muted'
                     }`}
                   >

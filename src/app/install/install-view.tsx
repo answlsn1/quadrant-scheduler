@@ -122,7 +122,7 @@ export function InstallView() {
       </p>
 
       {installed ? (
-        <p className="mt-8 rounded-xl border border-[color-mix(in_srgb,var(--q3)_40%,transparent)] bg-[color-mix(in_srgb,var(--q3)_10%,transparent)] px-4 py-3.5 text-sm text-[var(--q3)]">
+        <p className="mt-8 rounded-xl border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] px-4 py-3.5 text-sm text-[var(--accent)]">
           이미 설치돼 있다. 홈 화면에서 열면 된다.
         </p>
       ) : installEvent ? (
@@ -165,13 +165,13 @@ function Section({
   return (
     <section
       className={`rounded-xl border p-4 ${
-        highlight ? 'border-[color-mix(in_srgb,var(--q3)_45%,transparent)]' : 'border-border'
+        highlight ? 'border-[color-mix(in_srgb,var(--accent)_45%,transparent)]' : 'border-border'
       }`}
     >
       <h2 className="flex items-center gap-2 text-sm font-semibold">
         {title}
         {highlight ? (
-          <span className="rounded-md bg-[color-mix(in_srgb,var(--q3)_15%,transparent)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--q3)]">
+          <span className="rounded-md bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--accent)]">
             지금 이 기기
           </span>
         ) : null}
@@ -179,7 +179,7 @@ function Section({
       <ol className="mt-2.5 flex list-none flex-col gap-2 text-sm leading-relaxed text-muted">
         {steps.map((step, i) => (
           <li key={step} className="flex gap-2.5">
-            <span className="shrink-0 tabular-nums text-[var(--q3)]">{i + 1}</span>
+            <span className="shrink-0 tabular-nums text-[var(--accent)]">{i + 1}</span>
             <span>{step}</span>
           </li>
         ))}

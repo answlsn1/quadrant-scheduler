@@ -1,13 +1,16 @@
 /**
  * 사분면 정의 — 단일 진실 공급원(single source of truth).
  *
- * ⚠️ 경고: 이 번호 체계는 지누가 배운 프레임 그대로다.
- *    표준 아이젠하워 매트릭스와 2번·3번이 **반대**이며, 이는 의도된 것이다.
- *    "일반적인 매트릭스와 다르다"는 이유로 절대 교정하지 말 것.
- *    (작업지시서 0장 원칙 3)
+ * 번호는 표준 아이젠하워 순서다 (2026-08-03 지누 결정으로 재편):
+ * 우선순위가 번호 순서대로 내려간다. 중요한 것(2번)이
+ * 급하기만 한 것(3번)보다 위에 온다.
  *
- * 이 앱의 승부처는 3번이다. 항상 밀리는 칸이므로 미배치 3번 개수를
- * 홈 상단에 상시 노출한다.
+ * 역사: v1 초기에는 지누가 배운 프레임(2·3번이 표준과 반대)을 썼다.
+ * 다중 사용자 배포로 전제가 바뀌면서 표준 순서로 재편했고,
+ * 기존 데이터는 마이그레이션(renumber_quadrants_standard)으로 번호를 맞바꿨다.
+ *
+ * 이 앱의 승부처는 2번(일정에 넣는다)이다. 항상 밀리는 칸이므로
+ * 미배치 2번 개수를 홈 상단에 상시 노출한다.
  */
 
 export const QUADRANTS = [1, 2, 3, 4] as const
@@ -24,8 +27,6 @@ export interface QuadrantSpec {
   verb: string
   /** 어떤 것들이 여기 들어가는지 */
   examples: string
-  /** 보드 2×2에서의 자리. 참고 슬라이드와 동일: 좌상 1, 우상 3, 좌하 2, 우하 4 */
-  boardCell: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   /**
    * 이 칸의 색을 담은 CSS 변수 이름. 값은 globals.css에 있다.
    * 데이터로 결정되는 색이라 Tailwind 클래스 대신 인라인 style로 쓴다
@@ -40,24 +41,20 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     axis: '중요 O / 급함 O',
     verb: '지금 한다',
     examples: '긴급 업무, 마감 임박, 돌발상황',
-    boardCell: 'top-left',
     colorVar: '--q1',
   },
   2: {
     id: 2,
-    axis: '중요 X / 급함 O',
-    verb: '몰아서 처리',
-    examples: '상시 보고, 급한 부탁, 즉답 불필요 메시지',
-    boardCell: 'bottom-left',
+    axis: '중요 O / 급함 X',
+    verb: '일정에 넣는다',
+    examples: '말씀·자기계발·건강·장기계획',
     colorVar: '--q2',
   },
   3: {
     id: 3,
-    axis: '중요 O / 급함 X',
-    // 원문은 "일정에 박제" — 2026-08-02 사장님 결정으로 표현만 순화. 의미(날짜를 정해야 끝난다)는 그대로다.
-    verb: '일정에 넣는다',
-    examples: '말씀·자기계발·건강·장기계획',
-    boardCell: 'top-right',
+    axis: '중요 X / 급함 O',
+    verb: '몰아서 처리',
+    examples: '상시 보고, 급한 부탁, 즉답 불필요 메시지',
     colorVar: '--q3',
   },
   4: {
@@ -65,21 +62,18 @@ export const QUADRANT_SPEC: Record<Quadrant, QuadrantSpec> = {
     axis: '중요 X / 급함 X',
     verb: '버린다',
     examples: '의미 없는 유튜브, 습관적 서핑, 뒷담화',
-    boardCell: 'bottom-right',
     colorVar: '--q4',
   },
 }
 
-/**
- * `var(--q3)` 형태로 바로 쓸 수 있게.
- * DB에서 오는 quadrant는 smallint라 number로 넘어오므로 넓게 받고 안에서 좁힌다.
- */
-export function quadrantColor(quadrant: number | null | undefined): string {
-  return isQuadrant(quadrant) ? `var(${QUADRANT_SPEC[quadrant].colorVar})` : 'var(--border)'
-}
+/** 사분면 전체 조망의 세로 나열 순서 — 우선순위 그대로 */
+export const BOARD_ORDER: readonly Quadrant[] = [1, 2, 3, 4]
 
-/** 보드 2×2 렌더 순서 (좌상 → 우상 → 좌하 → 우하) */
-export const BOARD_ORDER: readonly Quadrant[] = [1, 3, 2, 4]
+/**
+ * 분류에서 이 칸을 고르면 날짜 지정 단계를 거친다.
+ * "일정에 넣는다"가 강제 동사인 칸이다.
+ */
+export const SCHEDULE_ON_CLASSIFY: Quadrant = 2
 
 /**
  * 4번은 "버린다"가 강제 동사다.
@@ -90,4 +84,12 @@ export const DROP_ON_CLASSIFY: Quadrant = 4
 
 export function isQuadrant(value: number | null | undefined): value is Quadrant {
   return value === 1 || value === 2 || value === 3 || value === 4
+}
+
+/**
+ * `var(--q2)` 형태로 바로 쓸 수 있게.
+ * DB에서 오는 quadrant는 smallint라 number로 넘어오므로 넓게 받고 안에서 좁힌다.
+ */
+export function quadrantColor(quadrant: number | null | undefined): string {
+  return isQuadrant(quadrant) ? `var(${QUADRANT_SPEC[quadrant].colorVar})` : 'var(--border)'
 }

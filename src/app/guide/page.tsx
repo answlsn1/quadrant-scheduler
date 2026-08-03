@@ -44,8 +44,8 @@ export default function GuidePage() {
         })}
       </div>
       <p className="mt-2.5 text-xs leading-relaxed text-muted">
-        3번이 핵심이다. 중요한데 급하지 않은 것은 항상 밀린다 — 그래서 이 앱은
-        3번에 날짜를 정하라고 계속 조른다. 4번은 죄책감 없이 버리라고 있는 칸이다.
+        2번이 핵심이다. 중요한데 급하지 않은 것은 항상 밀린다 — 그래서 이 앱은
+        2번에 날짜를 정하라고 계속 조른다. 4번은 죄책감 없이 버리라고 있는 칸이다.
         버린 기록도 남는다.
       </p>
 
@@ -57,18 +57,17 @@ export default function GuidePage() {
         </Step>
         <Step n={2} title="나눈다">
           시간 날 때 <b className="text-foreground">분류</b> 탭에서 한 장씩 네 칸으로
-          나눈다. 3번을 고르면 날짜를 물어본다.
+          나눈다. 2번을 고르면 날짜를 물어본다.
         </Step>
         <Step n={3} title="실행한다">
           첫 화면에 오늘 할 것이 올라온다. 항목을 탭하면 완료·버리기가 나온다.
         </Step>
       </ol>
 
-      <h2 className="mt-8 text-sm font-semibold">화면 네 개</h2>
+      <h2 className="mt-8 text-sm font-semibold">화면 세 개</h2>
       <ul className="mt-3 flex list-none flex-col gap-2 text-sm leading-relaxed text-muted">
-        <li><b className="text-foreground">오늘의 일정</b> — 오늘 할 것을 보고, 하단 "생각꺼내기" 입력창에 적는 곳</li>
+        <li><b className="text-foreground">오늘의 일정</b> — 오늘·내일 할 것을 보고, 하단 "생각꺼내기" 입력창에 적는 곳. 아래로 내리면 네 칸 전체가 보인다</li>
         <li><b className="text-foreground">분류</b> — 쌓인 것을 네 칸으로 나누는 곳</li>
-        <li><b className="text-foreground">스케줄러</b> — 네 칸 전체를 한눈에 보는 곳</li>
         <li><b className="text-foreground">기록</b> — 완료한 것과 버린 것. 잘못 넘어왔으면 되돌리기</li>
       </ul>
 
@@ -113,7 +112,7 @@ export default function GuidePage() {
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex gap-3">
-      <span className="shrink-0 tabular-nums text-[var(--q3)]">{n}</span>
+      <span className="shrink-0 tabular-nums text-[var(--accent)]">{n}</span>
       <span>
         <b className="text-foreground">{title}.</b> {children}
       </span>

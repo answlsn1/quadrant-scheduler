@@ -8,49 +8,83 @@ import { AppNav } from '@/components/app-nav'
 import { CaptureBar } from '@/components/capture-bar'
 import { TaskItem } from '@/components/task-item'
 import { Toast } from '@/components/toast'
-import { QUADRANT_SPEC, quadrantColor, type Quadrant } from '@/lib/quadrant'
-import { isActive, isInbox, isUnscheduledThree, todayISO, type Task } from '@/lib/tasks'
+import {
+  BOARD_ORDER,
+  QUADRANT_SPEC,
+  quadrantColor,
+  type Quadrant,
+} from '@/lib/quadrant'
+import {
+  daysFromToday,
+  isActive,
+  isInbox,
+  isUnscheduledPlan,
+  scheduleDeadline,
+  todayISO,
+  type Task,
+} from '@/lib/tasks'
+import { useArchive } from '@/lib/use-archive'
 import { useKeyboardInset } from '@/lib/use-keyboard-inset'
 import { useTasks } from '@/lib/use-tasks'
 
 /** 처음 안내 카드를 한 번 닫으면 다시 보여주지 않기 위한 로컬 플래그 */
 const INTRO_SEEN_KEY = 'sabun.intro.seen'
 
+type DayTab = 'today' | 'tomorrow'
+
+/**
+ * 통합 홈 (2026-08-03 사장님 결정 — 스케줄러 탭을 여기로 합쳤다).
+ *
+ * 위: [오늘 할 일 | 내일 할 일] 서브탭 — 그날 할 것만.
+ * 아래: 사분면 전체 — 모바일에서 2×2를 억지로 유지하지 않고 세로로 줄내림.
+ * 이 앱의 중심은 "간편하게 적고, 간편하게 확인"이다.
+ */
 export function HomeView() {
   const { tasks, loading, toast, capture, complete, drop, reschedule } = useTasks()
+  // 4번 칸의 "최근 버린 것" 표시용. 버린 항목은 작업 목록에 없다.
+  const { items: archived } = useArchive()
   const keyboardInset = useKeyboardInset()
 
-  /*
-   * 처음 온 사람용 안내 (사장님 요청 2026-08-02 — 지인 배포라 앱 설명이 필요하다).
-   * 항목이 하나라도 생기면 자연히 사라지고, 닫으면 다시 안 나온다.
-   * SSR에서는 localStorage가 없으므로 "본 것"으로 시작해 마운트 후 판별한다 — 깜빡임 방지.
-   */
+  const [dayTab, setDayTab] = useState<DayTab>('today')
+
   const [introSeen, setIntroSeen] = useState(true)
   useEffect(() => {
     setIntroSeen(localStorage.getItem(INTRO_SEEN_KEY) === '1')
   }, [])
-
   function dismissIntro() {
     localStorage.setItem(INTRO_SEEN_KEY, '1')
     setIntroSeen(true)
   }
 
   const today = todayISO()
+  const tomorrow = daysFromToday(1)
   const inbox = tasks.filter(isInbox)
   const active = tasks.filter(isActive)
+  const unscheduledPlan = active.filter(isUnscheduledPlan)
 
-  const queueOne = active.filter((t) => t.quadrant === 1)
-  // 오늘 것과 함께 지난 것도 올린다. 안 그러면 놓친 3번이 조용히 사라진다.
-  // 정렬: 날짜 → 시간(없으면 마지막). 시간을 정했다는 건 그 시각에 하겠다는 뜻이다.
-  const dueThree = active
-    .filter((t) => t.quadrant === 3 && t.scheduled_date && t.scheduled_date <= today)
-    .sort((a, b) => {
-      const byDate = (a.scheduled_date ?? '').localeCompare(b.scheduled_date ?? '')
-      if (byDate !== 0) return byDate
-      return (a.scheduled_time ?? '99').localeCompare(b.scheduled_time ?? '99')
-    })
-  const batchTwo = active.filter((t) => t.quadrant === 2)
-  const unscheduledThree = active.filter(isUnscheduledThree)
+  const byTime = (a: Task, b: Task) => {
+    const byDate = (a.scheduled_date ?? '').localeCompare(b.scheduled_date ?? '')
+    if (byDate !== 0) return byDate
+    return (a.scheduled_time ?? '99').localeCompare(b.scheduled_time ?? '99')
+  }
+
+  const queueNow = active.filter((t) => t.quadrant === 1)
+  // 오늘: 지난 것도 올린다 — 놓친 일정이 조용히 사라지면 안 된다.
+  const dueToday = active
+    .filter((t) => t.quadrant === 2 && t.scheduled_date && t.scheduled_date <= today)
+    .sort(byTime)
+  // 내일: 내일이 기간 창에 드는 예정 항목만.
+  const dueTomorrow = active
+    .filter(
+      (t) =>
+        t.quadrant === 2 &&
+        t.scheduled_date &&
+        t.scheduled_date <= tomorrow &&
+        (scheduleDeadline(t) ?? '') >= tomorrow,
+    )
+    .sort(byTime)
+  const batch = active.filter((t) => t.quadrant === 3)
+  const recentlyDropped = archived.filter((t) => t.status === 'dropped').slice(0, 8)
 
   return (
     <div className="app-shell flex flex-col">
@@ -63,19 +97,16 @@ export function HomeView() {
           </div>
         </header>
 
-        {/*
-         * 3번이 밀리는 게 이 앱이 풀려는 문제다. 못 본 척할 수 없어야 한다.
-         * 0이면 아예 사라져서 평소에는 조용하다.
-         */}
-        {unscheduledThree.length > 0 ? (
-          <Link
-            href="/board"
+        {/* 2번이 밀리는 게 이 앱이 풀려는 문제다. 못 본 척할 수 없어야 한다. */}
+        {unscheduledPlan.length > 0 ? (
+          <a
+            href="#quadrants"
             className="mt-4 flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--warn)_32%,transparent)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)] px-3.5 py-3 text-[13px] text-warn"
           >
-            <span>미배치 3번</span>
-            <b className="tabular-nums">{unscheduledThree.length}</b>
-            <span className="ml-auto">날짜 정하기 →</span>
-          </Link>
+            <span>날짜 없는 일정</span>
+            <b className="tabular-nums">{unscheduledPlan.length}</b>
+            <span className="ml-auto">날짜 정하기 ↓</span>
+          </a>
         ) : null}
 
         {!loading && tasks.length === 0 && !introSeen ? (
@@ -95,7 +126,7 @@ export function HomeView() {
               </li>
             </ol>
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-              <Link href="/guide" className="text-[13px] text-[var(--q3)] underline">
+              <Link href="/guide" className="text-[13px] text-[var(--accent)] underline">
                 자세한 사용법
               </Link>
               <button
@@ -109,58 +140,99 @@ export function HomeView() {
           </div>
         ) : null}
 
+        {/* 오늘 / 내일 서브탭 */}
+        <div className="mt-5 grid grid-cols-2 gap-2" role="tablist" aria-label="날짜 선택">
+          <DayTabButton active={dayTab === 'today'} onClick={() => setDayTab('today')}>
+            오늘 할 일
+          </DayTabButton>
+          <DayTabButton active={dayTab === 'tomorrow'} onClick={() => setDayTab('tomorrow')}>
+            내일 할 일
+          </DayTabButton>
+        </div>
+
         {loading ? (
-          <p className="mt-10 text-sm text-muted">불러오는 중</p>
+          <p className="mt-8 text-sm text-muted">불러오는 중</p>
         ) : (
-          <div className="mt-6 flex flex-col gap-7 pb-6">
-            <Section
-              quadrant={1}
-              label="지금 할 것"
-              tasks={queueOne}
-              empty="지금 할 것 없음."
-              onComplete={complete}
-              onDrop={drop}
-              onReschedule={reschedule}
-            />
+          <>
+            {dayTab === 'today' ? (
+              <div className="mt-5 flex flex-col gap-6">
+                <Section
+                  quadrant={1}
+                  label="지금 할 것"
+                  tasks={queueNow}
+                  empty="지금 할 것 없음."
+                  onComplete={complete}
+                  onDrop={drop}
+                  onReschedule={reschedule}
+                />
+                <Section
+                  quadrant={2}
+                  label="예정된 일정"
+                  tasks={dueToday}
+                  empty="오늘 일정에 넣어둔 것 없음."
+                  onComplete={complete}
+                  onDrop={drop}
+                  onReschedule={reschedule}
+                />
+                <details className="rounded-xl border border-dashed border-border">
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3.5 text-[13px] text-muted">
+                    <span className="flex items-center gap-2">
+                      <i
+                        className="h-[7px] w-[7px] rounded-full"
+                        style={{ background: quadrantColor(3) }}
+                      />
+                      3 · {QUADRANT_SPEC[3].verb}
+                    </span>
+                    <span className="tabular-nums">{batch.length}개 ⌄</span>
+                  </summary>
+                  <ul className="px-2 pb-2">
+                    {batch.length === 0 ? (
+                      <li className="px-1.5 py-3 text-sm text-muted">몰아서 처리할 것 없음.</li>
+                    ) : (
+                      batch.map((task) => (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          onComplete={complete}
+                          onDrop={drop}
+                          onReschedule={reschedule}
+                        />
+                      ))
+                    )}
+                  </ul>
+                </details>
+              </div>
+            ) : (
+              <div className="mt-5">
+                <Section
+                  quadrant={2}
+                  label="내일로 잡아둔 일정"
+                  tasks={dueTomorrow}
+                  empty="내일로 잡아둔 것 없음."
+                  onComplete={complete}
+                  onDrop={drop}
+                  onReschedule={reschedule}
+                />
+              </div>
+            )}
 
-            <Section
-              quadrant={3}
-              label="예정된 일정"
-              tasks={dueThree}
-              empty="오늘 일정에 넣어둔 것 없음."
-              onComplete={complete}
-              onDrop={drop}
-              onReschedule={reschedule}
-            />
-
-            <details className="rounded-xl border border-dashed border-border">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3.5 text-[13px] text-muted">
-                <span className="flex items-center gap-2">
-                  <i
-                    className="h-[7px] w-[7px] rounded-full"
-                    style={{ background: quadrantColor(2) }}
+            {/* 사분면 전체 — 세로 줄내림. 우선순위가 번호 순서대로 내려간다. */}
+            <section id="quadrants" className="mt-9 border-t border-border pt-5 pb-8">
+              <h2 className="text-[13px] font-medium text-muted">사분면 전체</h2>
+              <div className="mt-3 flex flex-col gap-3">
+                {BOARD_ORDER.map((q) => (
+                  <QuadrantCell
+                    key={q}
+                    quadrant={q}
+                    tasks={q === 4 ? recentlyDropped : active.filter((t) => t.quadrant === q)}
+                    onComplete={complete}
+                    onDrop={drop}
+                    onReschedule={reschedule}
                   />
-                  2 · {QUADRANT_SPEC[2].verb}
-                </span>
-                <span className="tabular-nums">{batchTwo.length}개 ⌄</span>
-              </summary>
-              <ul className="px-2 pb-2">
-                {batchTwo.length === 0 ? (
-                  <li className="px-1.5 py-3 text-sm text-muted">몰아서 처리할 것 없음.</li>
-                ) : (
-                  batchTwo.map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      onComplete={complete}
-                      onDrop={drop}
-                      onReschedule={reschedule}
-                    />
-                  ))
-                )}
-              </ul>
-            </details>
-          </div>
+                ))}
+              </div>
+            </section>
+          </>
         )}
       </main>
 
@@ -171,7 +243,6 @@ export function HomeView() {
         className="shrink-0 bg-background"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
-        {/* 탭 이름이 "오늘의 일정"이 되면서, 입력창의 정체는 이 소제목이 말해준다 */}
         <p className="px-4 pt-2.5 text-[11px] font-medium tracking-wide text-muted">
           생각꺼내기
         </p>
@@ -179,6 +250,32 @@ export function HomeView() {
         <AppNav inboxCount={inbox.length} />
       </div>
     </div>
+  )
+}
+
+function DayTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`min-h-[46px] rounded-xl border text-sm transition-colors duration-150 ${
+        active
+          ? 'border-foreground font-medium text-foreground'
+          : 'border-border text-muted'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -192,10 +289,7 @@ function Section({
   onReschedule,
 }: {
   quadrant: Quadrant
-  /**
-   * 홈에서는 상태를 말하는 이름을 쓴다 — "지금 할 것", "예정된 일정".
-   * 강제 동사(QUADRANT_SPEC.verb)는 분류 버튼처럼 "행동을 시키는" 자리의 것이다.
-   */
+  /** 홈은 상태 언어("지금 할 것", "예정된 일정"). 강제 동사는 분류 버튼의 것이다. */
   label: string
   tasks: Task[]
   empty: string
@@ -227,6 +321,62 @@ function Section({
           ))
         )}
       </ul>
+    </section>
+  )
+}
+
+/** 사분면 전체 조망의 한 칸. 4번은 최근 버린 것을 참고용으로만 보여준다. */
+function QuadrantCell({
+  quadrant,
+  tasks,
+  onComplete,
+  onDrop,
+  onReschedule,
+}: {
+  quadrant: Quadrant
+  tasks: Task[]
+  onComplete: (id: string) => void
+  onDrop: (id: string) => void
+  onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
+}) {
+  const spec = QUADRANT_SPEC[quadrant]
+  const color = quadrantColor(quadrant)
+  const isDropCell = quadrant === 4
+
+  return (
+    <section
+      style={{ borderColor: `color-mix(in srgb, ${color} 34%, transparent)` }}
+      className="rounded-xl border p-3"
+    >
+      <h3 className="flex items-center gap-1.5 text-[11px] text-muted">
+        <i className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: color }} />
+        {spec.id} · {spec.verb}
+        <span className="ml-auto tabular-nums">{tasks.length}</span>
+      </h3>
+
+      {tasks.length === 0 ? (
+        <p className="mt-2 text-[11px] text-muted">없음</p>
+      ) : isDropCell ? (
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {tasks.map((task) => (
+            <li key={task.id} className="text-[11px] leading-snug text-muted line-through">
+              {task.title}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="mt-2 -mx-0.5">
+          {tasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onComplete={onComplete}
+              onDrop={onDrop}
+              onReschedule={onReschedule}
+            />
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

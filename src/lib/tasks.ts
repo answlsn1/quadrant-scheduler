@@ -66,6 +66,6 @@ export const isInbox = (t: Task) => t.status === 'inbox'
 export const isActive = (t: Task) => t.status === 'active'
 export const isArchived = (t: Task) => t.status === 'done' || t.status === 'dropped'
 
-/** 3번인데 아직 날짜를 안 박은 것 — 홈 상단 카운터의 대상 */
-export const isUnscheduledThree = (t: Task) =>
-  t.status === 'active' && t.quadrant === 3 && !t.scheduled_date
+/** 2번(일정에 넣는다)인데 아직 날짜가 없는 것 — 홈 상단 경고 띠의 대상 */
+export const isUnscheduledPlan = (t: Task) =>
+  t.status === 'active' && t.quadrant === 2 && !t.scheduled_date

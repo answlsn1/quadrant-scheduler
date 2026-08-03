@@ -29,21 +29,21 @@ order by 1;
 - 가장 많은 날 / 없는 날: `___` / `___`
 - **판단 기준**: 캡처가 없는 날이 3일 이상이면 도구가 아니라 진입 경로를 의심한다.
 
-## 질문 2 — 3번 "일정에 넣기"가 지켜졌나
+## 질문 2 — 2번 "일정에 넣기"가 지켜졌나
 
-이 앱의 승부처다. 미배치 3번이 줄지 않았다면 앱이 문제를 못 풀고 있는 것이다.
+이 앱의 승부처다. 날짜 없는 2번이 줄지 않았다면 앱이 문제를 못 풀고 있는 것이다.
 
 ```sql
 select
-  count(*) filter (where quadrant = 3 and status = 'active' and scheduled_date is null) as 미배치_3번,
-  count(*) filter (where quadrant = 3 and status = 'active' and scheduled_date < current_date) as 지난_3번,
-  count(*) filter (where quadrant = 3 and status = 'done') as 완료한_3번,
-  count(*) filter (where quadrant = 3 and status = 'dropped') as 버린_3번
+  count(*) filter (where quadrant = 2 and status = 'active' and scheduled_date is null) as 미배치_2번,
+  count(*) filter (where quadrant = 2 and status = 'active' and scheduled_date < current_date) as 지난_2번,
+  count(*) filter (where quadrant = 2 and status = 'done') as 완료한_2번,
+  count(*) filter (where quadrant = 2 and status = 'dropped') as 버린_2번
 from public.tasks;
 ```
 
-- 미배치 3번 추이 (주 시작 → 주 끝): `___ → ___`
-- 3번 완료 건수: `___`
+- 미배치 2번 추이 (주 시작 → 주 끝): `___ → ___`
+- 2번 완료 건수: `___`
 - **판단 기준**: 미배치가 늘기만 했다면 분류 화면의 "건너뛰기"가 너무 쉬운 것이다.
 
 ## 질문 3 — 열지 않게 된 화면은 무엇인가
@@ -56,7 +56,7 @@ from public.tasks;
 |---|---|---|
 | 오늘 | | |
 | 분류 | | |
-| 보드 | | |
+| 사분면 전체(홈 하단) | | |
 | 기록 | | |
 
 - **판단 기준**: 한 주에 한 번도 안 연 화면은 v1.1에서 뺀다.

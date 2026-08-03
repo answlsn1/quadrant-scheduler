@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { quadrantColor } from '@/lib/quadrant'
+import { quadrantColor, SCHEDULE_ON_CLASSIFY } from '@/lib/quadrant'
 import { formatSchedule, scheduleDeadline, todayISO, type Task } from '@/lib/tasks'
 
 /** 완료 표시를 눈으로 보고 나서 목록에서 빠지게 하는 시간 */
@@ -29,11 +29,11 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
   const [open, setOpen] = useState(false)
   const [completing, setCompleting] = useState(false)
 
-  const isThree = task.quadrant === 3
-  const color = completing ? 'var(--q3)' : quadrantColor(task.quadrant)
+  const isSchedule = task.quadrant === SCHEDULE_ON_CLASSIFY
+  const color = completing ? 'var(--accent)' : quadrantColor(task.quadrant)
   const schedule = formatSchedule(task)
   const deadline = scheduleDeadline(task)
-  const overdue = Boolean(isThree && deadline && deadline < todayISO())
+  const overdue = Boolean(isSchedule && deadline && deadline < todayISO())
 
   function handleComplete() {
     if (completing) return
@@ -61,7 +61,7 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
       >
         <span className="min-w-0 flex-1">
           <span className="block text-sm leading-snug">{task.title}</span>
-          {isThree ? (
+          {isSchedule ? (
             <span className="mt-1 block text-xs">
               {schedule ? (
                 <span className={overdue ? 'text-warn' : 'text-muted'}>
@@ -90,7 +90,7 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
           <button
             type="button"
             onClick={handleComplete}
-            className="min-h-[48px] flex-1 rounded-lg border border-[color-mix(in_srgb,var(--q3)_45%,transparent)] bg-[color-mix(in_srgb,var(--q3)_12%,transparent)] px-4 text-sm font-medium text-[var(--q3)]"
+            className="min-h-[48px] flex-1 rounded-lg border border-[color-mix(in_srgb,var(--accent)_45%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-4 text-sm font-medium text-[var(--accent)]"
           >
             완료
           </button>
@@ -102,7 +102,7 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule }: Props) {
             버린다
           </button>
 
-          {isThree ? (
+          {isSchedule ? (
             <>
               <div className="flex w-full items-center gap-2">
                 <label className="flex min-w-0 flex-1 flex-col gap-1">
