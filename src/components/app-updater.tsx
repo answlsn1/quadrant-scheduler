@@ -19,6 +19,16 @@ const POLL_MS = 30 * 60 * 1000
 export function AppUpdater() {
   const reloadingRef = useRef(false)
 
+  // 푸시 알림용 서비스워커 등록. sw.js에는 fetch 핸들러가 없어
+  // "열 때마다 최신" 갱신 모델을 건드리지 않는다.
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      void navigator.serviceWorker.register('/sw.js').catch(() => {
+        // 등록 실패해도 앱 자체는 정상이다. 알림 설정 화면에서 다시 시도한다.
+      })
+    }
+  }, [])
+
   useEffect(() => {
     const current = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev'
     // 로컬 개발에서는 값이 고정이라 확인할 의미가 없다

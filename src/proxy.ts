@@ -113,6 +113,6 @@ export const config = {
      * matcher 없이 두면 CSS·JS·아이콘까지 인증 가드에 걸려 앱이 통째로 안 뜬다.
      * manifest.webmanifest는 비로그인 상태에서도 읽혀야 홈스크린 설치가 된다.
      */
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)',
   ],
 }

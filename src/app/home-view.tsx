@@ -348,9 +348,10 @@ function QuadrantCell({
       style={{ borderColor: `color-mix(in srgb, ${color} 34%, transparent)` }}
       className="rounded-xl border p-3"
     >
+      {/* 칸 제목은 강제 동사가 아니라 정의 그대로 (사장님 결정 2026-08-03) */}
       <h3 className="flex items-center gap-1.5 text-[11px] text-muted">
         <i className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: color }} />
-        {spec.id} · {spec.verb}
+        {spec.id} · {spec.axis}
         <span className="ml-auto tabular-nums">{tasks.length}</span>
       </h3>
 

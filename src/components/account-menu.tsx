@@ -68,8 +68,14 @@ export function AccountMenu() {
           <p className="mt-0.5 truncate text-xs text-muted">{email ?? ''}</p>
 
           <a
-            href="/guide"
+            href="/settings"
             className="mt-3 flex min-h-[44px] items-center justify-center rounded-lg border border-border text-sm text-muted transition-colors duration-150 hover:border-muted hover:text-foreground"
+          >
+            알림 설정
+          </a>
+          <a
+            href="/guide"
+            className="mt-2 flex min-h-[44px] items-center justify-center rounded-lg border border-border text-sm text-muted transition-colors duration-150 hover:border-muted hover:text-foreground"
           >
             앱 사용법
           </a>
