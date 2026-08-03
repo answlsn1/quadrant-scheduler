@@ -18,7 +18,12 @@ import { useTasks } from '@/lib/use-tasks'
 export function ClassifyView() {
   const { tasks, loading, toast, classify } = useTasks()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [awaitingDate, setAwaitingDate] = useState(false)
+  /**
+   * 분류 후속 단계 (단계적 루틴 — 사장님 지시 2026-08-03):
+   *  1번 → "실행 시간은?" (시간만, 날짜는 자동으로 오늘)
+   *  2번 → "언제 할지 정한다" (날짜·기간·시간)
+   */
+  const [pendingStep, setPendingStep] = useState<1 | 2 | null>(null)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -27,26 +32,45 @@ export function ClassifyView() {
   const queue = tasks.filter(isInbox).slice().reverse()
   const current = queue.find((t) => t.id === selectedId) ?? queue[0]
 
-  // 다른 항목을 고르면 진행 중이던 날짜 단계는 버린다
-  useEffect(() => {
-    setAwaitingDate(false)
+  function resetStep() {
+    setPendingStep(null)
     setStartDate('')
     setEndDate('')
     setStartTime('')
+  }
+
+  // 다른 항목을 고르면 진행 중이던 후속 단계는 버린다
+  useEffect(() => {
+    resetStep()
   }, [current?.id])
 
   function pick(quadrant: Quadrant) {
     if (!current) return
-    // 2번은 일정에 넣는 것이 강제 동사다. 날짜 단계를 한 번 거치게 한다.
+    // 1번은 실행 시간을, 2번은 날짜를 묻는 후속 단계로 이어진다.
+    if (quadrant === 1) {
+      setPendingStep(1)
+      return
+    }
     if (quadrant === SCHEDULE_ON_CLASSIFY) {
-      setAwaitingDate(true)
+      setPendingStep(2)
       return
     }
     advanceSelection()
     void classify(current.id, quadrant)
   }
 
-  function commitThree(
+  /**
+   * 1번 확정. 시간을 정하면 날짜도 오늘로 같이 박는다 —
+   * DB 규칙(시간은 날짜 없이 못 산다)이면서 "1번 = 오늘 한다"는 의미 그대로다.
+   */
+  function commitNow(time: string | null) {
+    if (!current) return
+    advanceSelection()
+    void classify(current.id, 1, time ? todayISO() : null, null, time)
+    resetStep()
+  }
+
+  function commitSchedule(
     start: string | null,
     end: string | null = null,
     time: string | null = null,
@@ -54,10 +78,7 @@ export function ClassifyView() {
     if (!current) return
     advanceSelection()
     void classify(current.id, SCHEDULE_ON_CLASSIFY, start, end, time)
-    setAwaitingDate(false)
-    setStartDate('')
-    setEndDate('')
-    setStartTime('')
+    resetStep()
   }
 
   /** 분류된 항목의 다음 것을 미리 선택해 둔다 — 위에서부터 착착 내려가는 흐름 */
@@ -106,16 +127,52 @@ export function ClassifyView() {
 
       {current && !loading ? (
         <div className="shrink-0 px-4 pb-2">
-          {awaitingDate ? (
+          {pendingStep === 1 ? (
+            <div className="flex flex-col gap-2.5">
+              <p className="text-[13px] text-muted">
+                실행 시간은? — <b className="text-foreground">{current.title}</b>
+              </p>
+
+              <div className="flex items-end gap-2">
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] text-muted">시간</span>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    aria-label="실행 시간"
+                    className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={!startTime}
+                  onClick={() => commitNow(startTime)}
+                  className="min-h-[52px] shrink-0 rounded-xl border border-border px-5 text-sm disabled:opacity-40"
+                >
+                  지정
+                </button>
+              </div>
+
+              {/* 시간은 옵션이다. 없어도 오늘 할 것에 올라간다. */}
+              <button
+                type="button"
+                onClick={() => commitNow(null)}
+                className="min-h-[48px] text-sm text-muted underline"
+              >
+                시간 없이 넣기
+              </button>
+            </div>
+          ) : pendingStep === 2 ? (
             <div className="flex flex-col gap-2.5">
               <p className="text-[13px] text-muted">
                 언제 할지 정한다 — <b className="text-foreground">{current.title}</b>
               </p>
 
               <div className="grid grid-cols-3 gap-2">
-                <DateChip label="오늘" onClick={() => commitThree(todayISO())} />
-                <DateChip label="내일" onClick={() => commitThree(daysFromToday(1))} />
-                <DateChip label="일주일 뒤" onClick={() => commitThree(daysFromToday(7))} />
+                <DateChip label="오늘" onClick={() => commitSchedule(todayISO())} />
+                <DateChip label="내일" onClick={() => commitSchedule(daysFromToday(1))} />
+                <DateChip label="일주일 뒤" onClick={() => commitSchedule(daysFromToday(7))} />
               </div>
 
               {/* 기간이면 끝 날짜까지, 하루면 시작만 넣고 지정 */}
@@ -163,7 +220,7 @@ export function ClassifyView() {
                 <button
                   type="button"
                   disabled={!startDate}
-                  onClick={() => commitThree(startDate, endDate || null, startTime || null)}
+                  onClick={() => commitSchedule(startDate, endDate || null, startTime || null)}
                   className="min-h-[52px] shrink-0 rounded-xl border border-border px-5 text-sm disabled:opacity-40"
                 >
                   지정
@@ -173,7 +230,7 @@ export function ClassifyView() {
               {/* 건너뛰기를 허용한다. 대신 미배치로 남아 홈 경고 띠에 잡힌다. */}
               <button
                 type="button"
-                onClick={() => commitThree(null)}
+                onClick={() => commitSchedule(null)}
                 className="min-h-[48px] text-sm text-muted underline"
               >
                 건너뛰기 (미배치로 남김)

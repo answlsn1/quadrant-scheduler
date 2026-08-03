@@ -115,7 +115,8 @@ export function HomeView() {
     return (a.scheduled_time ?? '99').localeCompare(b.scheduled_time ?? '99')
   }
 
-  const queueNow = active.filter((t) => t.quadrant === 1)
+  // 1번도 시간을 가질 수 있으니 시간순으로 (시간 없는 것은 뒤로)
+  const queueNow = active.filter((t) => t.quadrant === 1).sort(byTime)
   // 오늘: 지난 것도 올린다 — 놓친 일정이 조용히 사라지면 안 된다.
   const dueToday = active
     .filter((t) => t.quadrant === 2 && t.scheduled_date && t.scheduled_date <= today)
@@ -214,9 +215,9 @@ export function HomeView() {
               <div className="mt-5 flex flex-col gap-6">
                 <Section
                   quadrant={1}
-                  label="지금 할 것"
+                  label="오늘 할 것"
                   tasks={queueNow}
-                  empty="지금 할 것 없음."
+                  empty="오늘 할 것 없음."
                   onComplete={complete}
                   onDrop={drop}
                   onReschedule={reschedule}
@@ -364,7 +365,7 @@ function Section({
   onReschedule,
 }: {
   quadrant: Quadrant
-  /** 홈은 상태 언어("지금 할 것", "예정된 일정"). 강제 동사는 분류 버튼의 것이다. */
+  /** 홈은 상태 언어("오늘 할 것", "예정된 일정"). 강제 동사는 분류 버튼의 것이다. */
   label: string
   tasks: Task[]
   empty: string
