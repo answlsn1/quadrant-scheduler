@@ -56,18 +56,18 @@ export default function GuidePage() {
           꺼내는 게 목적이다.
         </Step>
         <Step n={2} title="나눈다">
-          시간 날 때 <b className="text-foreground">분류</b> 탭에서 한 장씩 네 칸으로
-          나눈다. 2번을 고르면 날짜를 물어본다.
+          적자마자 네 칸 중 하나로 나눈다. 1번은 실행 시간을, 2번은 날짜를 물어본다.
+          바쁘면 <b className="text-foreground">나중에</b>를 눌러 넘기고, 쌓인 것은
+          화면 위 <b className="text-foreground">인박스</b> 버튼으로 몰아서 나눈다.
         </Step>
         <Step n={3} title="실행한다">
           첫 화면에 오늘 할 것이 올라온다. 항목을 탭하면 완료·버리기가 나온다.
         </Step>
       </ol>
 
-      <h2 className="mt-8 text-sm font-semibold">화면 세 개</h2>
+      <h2 className="mt-8 text-sm font-semibold">화면 두 개</h2>
       <ul className="mt-3 flex list-none flex-col gap-2 text-sm leading-relaxed text-muted">
-        <li><b className="text-foreground">오늘의 일정</b> — 오늘·내일 할 것을 보고, 하단 "생각꺼내기" 입력창에 적는 곳. 아래로 내리면 네 칸 전체가 보인다</li>
-        <li><b className="text-foreground">분류</b> — 쌓인 것을 네 칸으로 나누는 곳</li>
+        <li><b className="text-foreground">오늘의 일정</b> — 적고, 나누고, 실행하는 곳. 오늘·내일 할 것과 네 칸 전체가 다 여기 있다</li>
         <li><b className="text-foreground">기록</b> — 완료한 것과 버린 것. 잘못 넘어왔으면 되돌리기</li>
       </ul>
 

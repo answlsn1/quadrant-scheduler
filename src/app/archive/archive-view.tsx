@@ -7,7 +7,6 @@ import { Toast } from '@/components/toast'
 import { quadrantColor } from '@/lib/quadrant'
 import { formatDate, todayISO, type Task } from '@/lib/tasks'
 import { useArchive } from '@/lib/use-archive'
-import { useTasks } from '@/lib/use-tasks'
 
 type Filter = 'done' | 'dropped'
 
@@ -16,12 +15,10 @@ type Filter = 'done' | 'dropped'
  * 4번은 "죄책감 없이 기록하고 버린다"가 취지라, 버린 것도 지우지 않고 남긴다.
  */
 export function ArchiveView() {
-  const { tasks } = useTasks()
   const { items, counts, loading, error, truncated, fetchAllForExport, restore } = useArchive()
   const [filter, setFilter] = useState<Filter>('done')
   const [exportState, setExportState] = useState<'idle' | 'working' | 'failed'>('idle')
 
-  const inboxCount = tasks.filter((t) => t.status === 'inbox').length
   const groups = groupByDay(items.filter((t) => t.status === filter), filter)
 
   async function handleExport() {
@@ -133,7 +130,7 @@ export function ArchiveView() {
       </main>
 
       <Toast message={error} />
-      <AppNav inboxCount={inboxCount} />
+      <AppNav />
     </div>
   )
 }

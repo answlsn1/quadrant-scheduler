@@ -111,11 +111,14 @@ export function useTasks() {
     [optimistic, supabase],
   )
 
-  /** 캡처 — 인박스로 넣기만 한다. 분류는 나중에 몰아서 (원칙 1) */
+  /**
+   * 캡처 — 먼저 인박스로 저장한다 (5초 룰: 저장이 분류를 기다리지 않는다).
+   * 성공하면 새 항목의 id를 돌려준다 — 홈이 그 항목으로 분류 패널을 연다.
+   */
   const capture = useCallback(
-    (rawTitle: string) => {
+    async (rawTitle: string): Promise<string | null> => {
       const title = rawTitle.trim()
-      if (!title) return Promise.resolve(false)
+      if (!title) return null
 
       // id를 클라이언트에서 만들어 두면 롤백과 후속 조작이 단순해진다.
       const id = crypto.randomUUID()
@@ -134,11 +137,12 @@ export function useTasks() {
         dropped_at: null,
       }
 
-      return optimistic(
+      const ok = await optimistic(
         (prev) => [draft, ...prev],
         () => supabase.from('tasks').insert({ id, title }),
         '저장하지 못했습니다. 다시 시도해 주세요.',
       )
+      return ok ? id : null
     },
     [optimistic, supabase],
   )

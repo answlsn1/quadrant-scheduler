@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { AccountMenu } from '@/components/account-menu'
 import { AppNav } from '@/components/app-nav'
 import { CaptureBar } from '@/components/capture-bar'
+import { ClassifyPanel } from '@/components/classify-panel'
 import { TaskItem } from '@/components/task-item'
 import { Toast } from '@/components/toast'
 import {
@@ -43,13 +44,33 @@ type DayTab = 'today' | 'tomorrow'
  * 이 앱의 중심은 "간편하게 적고, 간편하게 확인"이다.
  */
 export function HomeView() {
-  const { tasks, loading, toast, capture, complete, undoTarget, undoComplete, drop, reschedule } =
-    useTasks()
+  const {
+    tasks,
+    loading,
+    toast,
+    capture,
+    classify,
+    complete,
+    undoTarget,
+    undoComplete,
+    drop,
+    reschedule,
+  } = useTasks()
   // 4번 칸의 "최근 버린 것" 표시용. 버린 항목은 작업 목록에 없다.
   const { items: archived } = useArchive()
   const keyboardInset = useKeyboardInset()
 
   const [dayTab, setDayTab] = useState<DayTab>('today')
+
+  /*
+   * 인라인 분류 (2026-08-03 사장님 결정 — 분류 탭 제거, 홈에서 전부).
+   *  - 'capture': 방금 적은 항목 하나만 묻고 닫는다. 연속 캡처 흐름을 지킨다.
+   *  - 'inbox'  : 인박스 버튼으로 열어 쌓인 것을 오래된 순으로 처리한다.
+   * 캡처 저장은 패널과 무관하게 먼저 끝나 있다 — 5초 룰은 그대로다.
+   */
+  const [classifyMode, setClassifyMode] = useState<'capture' | 'inbox' | null>(null)
+  const [classifyFocusId, setClassifyFocusId] = useState<string | null>(null)
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set())
 
   /*
    * 사분면 전체는 기본 접힘 — 개수만 보인다 (사장님 지시 2026-08-03).
@@ -134,13 +155,83 @@ export function HomeView() {
   const batch = active.filter((t) => t.quadrant === 3)
   const recentlyDropped = archived.filter((t) => t.status === 'dropped').slice(0, 8)
 
+  // 분류 대상: 오래된 것부터, 이번 세션에서 "나중에"한 것은 건너뛴다
+  const classifyQueue = inbox
+    .slice()
+    .reverse()
+    .filter((t) => !skippedIds.has(t.id))
+  const classifyTask = classifyMode
+    ? (classifyQueue.find((t) => t.id === classifyFocusId) ?? classifyQueue[0] ?? null)
+    : null
+
+  // 처리할 것이 다 떨어지면 패널을 닫고 캡처로 돌아간다
+  useEffect(() => {
+    if (classifyMode && !classifyTask) closeClassify()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- classifyTask 소멸 시점만 본다
+  }, [classifyMode, classifyTask?.id])
+
+  function closeClassify() {
+    setClassifyMode(null)
+    setClassifyFocusId(null)
+    setSkippedIds(new Set())
+  }
+
+  async function handleCapture(title: string) {
+    const newId = await capture(title)
+    if (newId) {
+      // 방금 적은 것을 바로 분류하게 패널을 연다. 저장은 이미 끝났다.
+      setSkippedIds(new Set())
+      setClassifyFocusId(newId)
+      setClassifyMode('capture')
+    }
+    return newId
+  }
+
+  function handleClassify(
+    quadrant: Quadrant,
+    start?: string | null,
+    end?: string | null,
+    time?: string | null,
+  ) {
+    if (!classifyTask) return
+    void classify(classifyTask.id, quadrant, start ?? null, end ?? null, time ?? null)
+    if (classifyMode === 'capture') closeClassify() // 연속 캡처 흐름으로 복귀
+    else setClassifyFocusId(null) // 다음 항목으로
+  }
+
+  function handleClassifySkip() {
+    if (!classifyTask) return
+    if (classifyMode === 'capture') {
+      closeClassify()
+      return
+    }
+    setSkippedIds((prev) => new Set(prev).add(classifyTask.id))
+    setClassifyFocusId(null)
+  }
+
   return (
     <div className="app-shell flex flex-col">
       <main className="flex-1 overflow-y-auto px-4 pt-6">
         <header className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">오늘의 일정</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-xs tabular-nums text-muted">인박스 {inbox.length}</span>
+          <div className="flex items-center gap-2">
+            {/* 분류 탭이 없어졌으므로 쌓인 인박스는 여기서 몰아서 분류한다 */}
+            <button
+              type="button"
+              disabled={inbox.length === 0}
+              onClick={() => {
+                setSkippedIds(new Set())
+                setClassifyFocusId(null)
+                setClassifyMode('inbox')
+              }}
+              className={`min-h-[36px] rounded-full border px-3 text-xs tabular-nums transition-colors duration-150 ${
+                inbox.length > 0
+                  ? 'border-[color-mix(in_srgb,var(--accent)_45%,transparent)] text-[var(--accent)]'
+                  : 'border-border text-muted'
+              }`}
+            >
+              인박스 {inbox.length}
+            </button>
             <AccountMenu />
           </div>
         </header>
@@ -163,12 +254,11 @@ export function HomeView() {
             <p className="text-sm font-medium">처음이라면, 이렇게 쓴다</p>
             <ol className="mt-2.5 flex list-none flex-col gap-1.5 text-[13px] leading-relaxed text-muted">
               <li>
-                <b className="text-foreground">1</b> 아래 입력창에 떠오르는 것을 그냥 적는다 —
-                분류는 나중에
+                <b className="text-foreground">1</b> 아래 입력창에 떠오르는 것을 그냥 적는다
               </li>
               <li>
-                <b className="text-foreground">2</b> 시간 날 때 <b className="text-foreground">분류</b> 탭에서
-                네 칸 중 하나로 나눈다
+                <b className="text-foreground">2</b> 적자마자 네 칸 중 하나로 나눈다 — 바쁘면
+                "나중에"로 넘겨도 된다
               </li>
               <li>
                 <b className="text-foreground">3</b> 이 화면에서 오늘 할 것을 실행한다
@@ -311,11 +401,24 @@ export function HomeView() {
         className="shrink-0 bg-background"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
-        <p className="px-4 pt-2.5 text-[11px] font-medium tracking-wide text-muted">
-          생각꺼내기
-        </p>
-        <CaptureBar onCapture={capture} />
-        <AppNav inboxCount={inbox.length} />
+        {classifyTask ? (
+          /* 캡처 직후(또는 인박스 버튼)에는 생각꺼내기 자리에 분류가 뜬다 */
+          <ClassifyPanel
+            task={classifyTask}
+            remaining={Math.max(0, classifyQueue.length - 1)}
+            onClassify={handleClassify}
+            onSkip={handleClassifySkip}
+            onClose={closeClassify}
+          />
+        ) : (
+          <>
+            <p className="px-4 pt-2.5 text-[11px] font-medium tracking-wide text-muted">
+              생각꺼내기
+            </p>
+            <CaptureBar onCapture={handleCapture} />
+          </>
+        )}
+        <AppNav />
       </div>
     </div>
   )

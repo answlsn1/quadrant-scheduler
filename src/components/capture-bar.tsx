@@ -14,7 +14,8 @@ import { useRef, useState, type FormEvent } from 'react'
 export function CaptureBar({
   onCapture,
 }: {
-  onCapture: (title: string) => Promise<boolean>
+  /** 저장 성공 시 새 항목 id, 실패 시 null */
+  onCapture: (title: string) => Promise<string | null>
 }) {
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -28,8 +29,8 @@ export function CaptureBar({
     setDraft('')
     inputRef.current?.focus()
 
-    const ok = await onCapture(value)
-    if (!ok) setDraft(value) // 실패했으면 쓴 내용을 돌려준다
+    const newId = await onCapture(value)
+    if (!newId) setDraft(value) // 실패했으면 쓴 내용을 돌려준다
   }
 
   return (
