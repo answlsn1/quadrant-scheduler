@@ -47,6 +47,25 @@ export function HomeView() {
 
   const [dayTab, setDayTab] = useState<DayTab>('today')
 
+  /*
+   * 사분면 전체는 기본 접힘 — 개수만 보인다 (사장님 지시 2026-08-03).
+   * 펼침 상태는 세션 안에서만 유지한다. details 대신 상태로 관리하는 이유는
+   * 위의 "날짜 없는 일정" 띠를 눌렀을 때 2번 칸을 코드로 펼쳐야 하기 때문.
+   */
+  const [openQuadrants, setOpenQuadrants] = useState<Set<Quadrant>>(new Set())
+  function toggleQuadrant(q: Quadrant) {
+    setOpenQuadrants((prev) => {
+      const next = new Set(prev)
+      if (next.has(q)) next.delete(q)
+      else next.add(q)
+      return next
+    })
+  }
+  function revealUnscheduled() {
+    setOpenQuadrants((prev) => new Set(prev).add(2))
+    document.getElementById('quadrants')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const [introSeen, setIntroSeen] = useState(true)
   useEffect(() => {
     setIntroSeen(localStorage.getItem(INTRO_SEEN_KEY) === '1')
@@ -99,14 +118,15 @@ export function HomeView() {
 
         {/* 2번이 밀리는 게 이 앱이 풀려는 문제다. 못 본 척할 수 없어야 한다. */}
         {unscheduledPlan.length > 0 ? (
-          <a
-            href="#quadrants"
-            className="mt-4 flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--warn)_32%,transparent)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)] px-3.5 py-3 text-[13px] text-warn"
+          <button
+            type="button"
+            onClick={revealUnscheduled}
+            className="mt-4 flex w-full items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--warn)_32%,transparent)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)] px-3.5 py-3 text-[13px] text-warn"
           >
             <span>날짜 없는 일정</span>
             <b className="tabular-nums">{unscheduledPlan.length}</b>
             <span className="ml-auto">날짜 정하기 ↓</span>
-          </a>
+          </button>
         ) : null}
 
         {!loading && tasks.length === 0 && !introSeen ? (
@@ -219,12 +239,14 @@ export function HomeView() {
             {/* 사분면 전체 — 세로 줄내림. 우선순위가 번호 순서대로 내려간다. */}
             <section id="quadrants" className="mt-9 border-t border-border pt-5 pb-8">
               <h2 className="text-[13px] font-medium text-muted">사분면 전체</h2>
-              <div className="mt-3 flex flex-col gap-3">
+              <div className="mt-3 flex flex-col gap-2.5">
                 {BOARD_ORDER.map((q) => (
                   <QuadrantCell
                     key={q}
                     quadrant={q}
                     tasks={q === 4 ? recentlyDropped : active.filter((t) => t.quadrant === q)}
+                    open={openQuadrants.has(q)}
+                    onToggle={() => toggleQuadrant(q)}
                     onComplete={complete}
                     onDrop={drop}
                     onReschedule={reschedule}
@@ -325,16 +347,24 @@ function Section({
   )
 }
 
-/** 사분면 전체 조망의 한 칸. 4번은 최근 버린 것을 참고용으로만 보여준다. */
+/**
+ * 사분면 전체 조망의 한 칸 — 드롭다운. 기본은 접혀서 개수만 보이고,
+ * 탭하면 목록이 펼쳐진다 (사장님 지시 2026-08-03).
+ * 4번은 최근 버린 것을 참고용으로만 보여준다.
+ */
 function QuadrantCell({
   quadrant,
   tasks,
+  open,
+  onToggle,
   onComplete,
   onDrop,
   onReschedule,
 }: {
   quadrant: Quadrant
   tasks: Task[]
+  open: boolean
+  onToggle: () => void
   onComplete: (id: string) => void
   onDrop: (id: string) => void
   onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
@@ -342,42 +372,78 @@ function QuadrantCell({
   const spec = QUADRANT_SPEC[quadrant]
   const color = quadrantColor(quadrant)
   const isDropCell = quadrant === 4
+  const hasItems = tasks.length > 0
 
   return (
     <section
       style={{ borderColor: `color-mix(in srgb, ${color} 34%, transparent)` }}
-      className="rounded-xl border p-3"
+      className="overflow-hidden rounded-xl border"
     >
       {/* 칸 제목은 강제 동사가 아니라 정의 그대로 (사장님 결정 2026-08-03) */}
-      <h3 className="flex items-center gap-1.5 text-[11px] text-muted">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex min-h-[52px] w-full items-center gap-2 px-3.5 py-3 text-left"
+      >
         <i className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: color }} />
-        {spec.id} · {spec.axis}
-        <span className="ml-auto tabular-nums">{tasks.length}</span>
-      </h3>
+        <span className="text-[13px] text-muted">
+          {spec.id} · {spec.axis}
+        </span>
 
-      {tasks.length === 0 ? (
-        <p className="mt-2 text-[11px] text-muted">없음</p>
-      ) : isDropCell ? (
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {tasks.map((task) => (
-            <li key={task.id} className="text-[11px] leading-snug text-muted line-through">
-              {task.title}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <ul className="mt-2 -mx-0.5">
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onComplete={onComplete}
-              onDrop={onDrop}
-              onReschedule={onReschedule}
-            />
-          ))}
-        </ul>
-      )}
+        {/* 접힌 상태의 주인공은 개수다 — 크게, 칸 색으로 */}
+        <span
+          style={
+            hasItems && !isDropCell
+              ? {
+                  color,
+                  background: `color-mix(in srgb, ${color} 14%, transparent)`,
+                }
+              : undefined
+          }
+          className={`ml-auto min-w-[34px] rounded-lg px-2 py-1 text-center text-[15px] font-semibold tabular-nums ${
+            hasItems && !isDropCell ? '' : 'text-muted'
+          }`}
+        >
+          {tasks.length}
+        </span>
+        <span
+          aria-hidden="true"
+          className={`shrink-0 text-xs text-muted transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        >
+          ⌄
+        </span>
+      </button>
+
+      {open ? (
+        <div className="border-t border-border px-3 pb-3 pt-2">
+          {tasks.length === 0 ? (
+            <p className="py-1.5 text-[13px] text-muted">없음</p>
+          ) : isDropCell ? (
+            <ul className="flex flex-col gap-1.5 py-1">
+              {tasks.map((task) => (
+                <li key={task.id} className="text-[13px] leading-snug text-muted line-through">
+                  {task.title}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="-mx-0.5">
+              {tasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onComplete={onComplete}
+                  onDrop={onDrop}
+                  onReschedule={onReschedule}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
     </section>
   )
 }
