@@ -6,6 +6,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { isIOS, isStandalone, pushSupported, vapidKeyBytes } from '@/lib/push'
 import { createClient } from '@/lib/supabase/client'
 
+/**
+ * 다음 발송 시각 안내. 발송 함수와 같은 규칙(KST, 하루 1회)으로 계산한다.
+ * KST는 DST가 없어 UTC+9 고정 오프셋이 안전하다.
+ */
+function nextSendLabel(time: string, enabled: boolean): string {
+  if (!enabled) return '알림이 꺼져 있다.'
+  const kst = new Date(Date.now() + 9 * 3600_000)
+  const [h, m] = time.split(':').map(Number)
+  const nowMinutes = kst.getUTCHours() * 60 + kst.getUTCMinutes()
+  const when = h * 60 + m > nowMinutes ? '오늘' : '내일'
+  return `다음 알림: ${when} ${time}`
+}
+
 type DeviceState =
   | 'unsupported' // 이 브라우저는 웹푸시가 안 된다
   | 'ios-not-installed' // iOS인데 홈 화면 설치 전 — 애플 제약
@@ -201,6 +214,8 @@ export function SettingsView() {
         <p className="mt-1 text-[11px] leading-relaxed text-muted">
           모든 기기에 함께 적용된다. 시간은 한국 시간 기준.
         </p>
+        {/* "안 온 건지, 아직 시간이 안 된 건지"를 구분해주는 한 줄 */}
+        <p className="mt-2 text-[13px] text-[var(--accent)]">{nextSendLabel(notifyTime, enabled)}</p>
       </section>
 
       {/* 이 기기 */}

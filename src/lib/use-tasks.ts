@@ -76,6 +76,7 @@ export function useTasks() {
   useEffect(
     () => () => {
       if (toastTimer.current) clearTimeout(toastTimer.current)
+      if (undoTimer.current) clearTimeout(undoTimer.current)
     },
     [],
   )
@@ -174,15 +175,42 @@ export function useTasks() {
     [patch],
   )
 
+  /*
+   * 완료 직후 몇 초간 실행취소를 열어둔다 (사장님 승인 2026-08-03).
+   * 흔들리는 폰에서 오폭했을 때 기록 탭까지 가지 않고 그 자리에서 되돌린다.
+   */
+  const [undoTarget, setUndoTarget] = useState<Task | null>(null)
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const complete = useCallback(
-    (id: string) =>
-      patch(
+    async (id: string) => {
+      const snapshot = tasksRef.current.find((t) => t.id === id) ?? null
+      const ok = await patch(
         id,
         { status: 'done', completed_at: new Date().toISOString() },
         '완료 처리를 저장하지 못했습니다.',
-      ),
+      )
+      if (ok && snapshot) {
+        setUndoTarget(snapshot)
+        if (undoTimer.current) clearTimeout(undoTimer.current)
+        undoTimer.current = setTimeout(() => setUndoTarget(null), 4000)
+      }
+      return ok
+    },
     [patch],
   )
+
+  const undoComplete = useCallback(() => {
+    const target = undoTarget
+    if (!target) return Promise.resolve(false)
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+    setUndoTarget(null)
+    return patch(
+      target.id,
+      { status: 'active', completed_at: null },
+      '되돌리지 못했습니다.',
+    )
+  }, [undoTarget, patch])
 
   const drop = useCallback(
     (id: string) =>
@@ -220,6 +248,8 @@ export function useTasks() {
     capture,
     classify,
     complete,
+    undoTarget,
+    undoComplete,
     drop,
     reschedule,
     reload,

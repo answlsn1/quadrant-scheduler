@@ -11,6 +11,7 @@ import { Toast } from '@/components/toast'
 import {
   BOARD_ORDER,
   QUADRANT_SPEC,
+  isQuadrant,
   quadrantColor,
   type Quadrant,
 } from '@/lib/quadrant'
@@ -29,6 +30,8 @@ import { useTasks } from '@/lib/use-tasks'
 
 /** 처음 안내 카드를 한 번 닫으면 다시 보여주지 않기 위한 로컬 플래그 */
 const INTRO_SEEN_KEY = 'sabun.intro.seen'
+/** 사분면 전체에서 마지막으로 열어둔 칸들 */
+const QUADRANT_OPEN_KEY = 'sabun.quadrants.open'
 
 type DayTab = 'today' | 'tomorrow'
 
@@ -40,7 +43,8 @@ type DayTab = 'today' | 'tomorrow'
  * 이 앱의 중심은 "간편하게 적고, 간편하게 확인"이다.
  */
 export function HomeView() {
-  const { tasks, loading, toast, capture, complete, drop, reschedule } = useTasks()
+  const { tasks, loading, toast, capture, complete, undoTarget, undoComplete, drop, reschedule } =
+    useTasks()
   // 4번 칸의 "최근 버린 것" 표시용. 버린 항목은 작업 목록에 없다.
   const { items: archived } = useArchive()
   const keyboardInset = useKeyboardInset()
@@ -53,16 +57,40 @@ export function HomeView() {
    * 위의 "날짜 없는 일정" 띠를 눌렀을 때 2번 칸을 코드로 펼쳐야 하기 때문.
    */
   const [openQuadrants, setOpenQuadrants] = useState<Set<Quadrant>>(new Set())
+
+  // 마지막으로 열어둔 칸을 기억한다 (사장님 결정 2026-08-03).
+  // SSR에는 localStorage가 없으므로 접힌 채로 시작해 마운트 후 복원한다.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(QUADRANT_OPEN_KEY)
+      if (raw) {
+        const saved = (JSON.parse(raw) as (number | null)[]).filter(isQuadrant)
+        if (saved.length > 0) setOpenQuadrants(new Set(saved))
+      }
+    } catch {
+      // 저장값이 깨졌으면 접힌 기본값으로 간다
+    }
+  }, [])
+
+  function persistOpen(next: Set<Quadrant>) {
+    localStorage.setItem(QUADRANT_OPEN_KEY, JSON.stringify([...next]))
+  }
+
   function toggleQuadrant(q: Quadrant) {
     setOpenQuadrants((prev) => {
       const next = new Set(prev)
       if (next.has(q)) next.delete(q)
       else next.add(q)
+      persistOpen(next)
       return next
     })
   }
   function revealUnscheduled() {
-    setOpenQuadrants((prev) => new Set(prev).add(2))
+    setOpenQuadrants((prev) => {
+      const next = new Set(prev).add(2 as Quadrant)
+      persistOpen(next)
+      return next
+    })
     document.getElementById('quadrants')?.scrollIntoView({ behavior: 'smooth' })
   }
 
@@ -162,10 +190,18 @@ export function HomeView() {
 
         {/* 오늘 / 내일 서브탭 */}
         <div className="mt-5 grid grid-cols-2 gap-2" role="tablist" aria-label="날짜 선택">
-          <DayTabButton active={dayTab === 'today'} onClick={() => setDayTab('today')}>
+          <DayTabButton
+            active={dayTab === 'today'}
+            count={queueNow.length + dueToday.length}
+            onClick={() => setDayTab('today')}
+          >
             오늘 할 일
           </DayTabButton>
-          <DayTabButton active={dayTab === 'tomorrow'} onClick={() => setDayTab('tomorrow')}>
+          <DayTabButton
+            active={dayTab === 'tomorrow'}
+            count={dueTomorrow.length}
+            onClick={() => setDayTab('tomorrow')}
+          >
             내일 할 일
           </DayTabButton>
         </div>
@@ -258,7 +294,16 @@ export function HomeView() {
         )}
       </main>
 
-      <Toast message={toast} />
+      {/* 오류가 우선. 없을 때만 실행취소 창구를 보여준다. */}
+      {toast ? (
+        <Toast message={toast} />
+      ) : undoTarget ? (
+        <Toast
+          tone="info"
+          message={`완료 — ${undoTarget.title}`}
+          action={{ label: '실행취소', onClick: () => void undoComplete() }}
+        />
+      ) : null}
 
       {/* 키보드가 올라오면 그만큼 밀어 올려 입력창이 항상 키보드 바로 위에 붙는다 */}
       <div
@@ -277,10 +322,13 @@ export function HomeView() {
 
 function DayTabButton({
   active,
+  count,
   onClick,
   children,
 }: {
   active: boolean
+  /** 그 날의 할 일 개수. 눌러보기 전에 보이라고 탭에 붙인다. */
+  count: number
   onClick: () => void
   children: React.ReactNode
 }) {
@@ -290,13 +338,18 @@ function DayTabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`min-h-[46px] rounded-xl border text-sm transition-colors duration-150 ${
+      className={`flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border text-sm transition-colors duration-150 ${
         active
           ? 'border-foreground font-medium text-foreground'
           : 'border-border text-muted'
       }`}
     >
       {children}
+      {count > 0 ? (
+        <span className="min-w-[18px] rounded-full bg-foreground px-1.5 text-center text-[11px] font-medium tabular-nums text-background">
+          {count}
+        </span>
+      ) : null}
     </button>
   )
 }
