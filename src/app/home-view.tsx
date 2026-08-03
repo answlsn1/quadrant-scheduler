@@ -25,6 +25,7 @@ import {
   todayISO,
   type Task,
 } from '@/lib/tasks'
+import type { RoutineFreq } from '@/lib/routines'
 import { useArchive } from '@/lib/use-archive'
 import { useKeyboardInset } from '@/lib/use-keyboard-inset'
 import { useTasks } from '@/lib/use-tasks'
@@ -50,6 +51,7 @@ export function HomeView() {
     toast,
     capture,
     classify,
+    createRoutine,
     complete,
     undoTarget,
     undoComplete,
@@ -197,6 +199,23 @@ export function HomeView() {
     void classify(classifyTask.id, quadrant, start ?? null, end ?? null, time ?? null)
     if (classifyMode === 'capture') closeClassify() // 연속 캡처 흐름으로 복귀
     else setClassifyFocusId(null) // 다음 항목으로
+  }
+
+  function handleRoutine(freq: RoutineFreq, days: number[], time: string | null) {
+    if (!classifyTask) return
+    void createRoutine(classifyTask, freq, days, time)
+    if (classifyMode === 'capture') {
+      closeClassify()
+      return
+    }
+    /*
+     * 인박스 모드: createRoutine은 첫 왕복이 끝나야 항목이 인박스에서 빠지므로
+     * (classify와 달리 즉시 낙관적 반영이 없다), 완료를 기다리지 않고
+     * 세션 스킵으로 바로 다음 항목으로 넘긴다 (리뷰 발견: 이중 탭 중복 방지).
+     * 실패하면 토스트가 뜨고 항목은 인박스에 남는다.
+     */
+    setSkippedIds((prev) => new Set(prev).add(classifyTask.id))
+    setClassifyFocusId(null)
   }
 
   function handleClassifySkip() {
@@ -407,6 +426,7 @@ export function HomeView() {
             task={classifyTask}
             remaining={Math.max(0, classifyQueue.length - 1)}
             onClassify={handleClassify}
+            onRoutine={handleRoutine}
             onSkip={handleClassifySkip}
             onClose={closeClassify}
           />

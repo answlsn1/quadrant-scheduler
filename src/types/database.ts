@@ -64,6 +64,45 @@ export type Database = {
         }
         Relationships: []
       }
+      routines: {
+        Row: {
+          active: boolean
+          bymonthday: number[] | null
+          byweekday: number[] | null
+          created_at: string
+          freq: string
+          generated_until: string | null
+          id: string
+          scheduled_time: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          bymonthday?: number[] | null
+          byweekday?: number[] | null
+          created_at?: string
+          freq: string
+          generated_until?: string | null
+          id?: string
+          scheduled_time?: string | null
+          title: string
+          user_id?: string
+        }
+        Update: {
+          active?: boolean
+          bymonthday?: number[] | null
+          byweekday?: number[] | null
+          created_at?: string
+          freq?: string
+          generated_until?: string | null
+          id?: string
+          scheduled_time?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -99,6 +138,7 @@ export type Database = {
           id: string
           note: string | null
           quadrant: number | null
+          routine_id: string | null
           scheduled_date: string | null
           scheduled_end_date: string | null
           scheduled_time: string | null
@@ -113,6 +153,7 @@ export type Database = {
           id?: string
           note?: string | null
           quadrant?: number | null
+          routine_id?: string | null
           scheduled_date?: string | null
           scheduled_end_date?: string | null
           scheduled_time?: string | null
@@ -127,6 +168,7 @@ export type Database = {
           id?: string
           note?: string | null
           quadrant?: number | null
+          routine_id?: string | null
           scheduled_date?: string | null
           scheduled_end_date?: string | null
           scheduled_time?: string | null

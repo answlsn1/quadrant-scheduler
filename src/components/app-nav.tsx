@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation'
  */
 const ITEMS = [
   { href: '/', label: '오늘의 일정' },
+  { href: '/calendar', label: '캘린더' },
   { href: '/archive', label: '기록' },
 ]
 
@@ -19,7 +20,7 @@ export function AppNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="bottom-safe grid shrink-0 grid-cols-2 border-t border-border bg-background">
+    <nav className="bottom-safe grid shrink-0 grid-cols-3 border-t border-border bg-background">
       {ITEMS.map((item) => {
         const active = pathname === item.href
         return (

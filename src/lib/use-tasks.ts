@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { DROP_ON_CLASSIFY, type Quadrant } from '@/lib/quadrant'
+import { DROP_ON_CLASSIFY, SCHEDULE_ON_CLASSIFY, type Quadrant } from '@/lib/quadrant'
+import { computeOccurrences, type RoutineFreq } from '@/lib/routines'
 import { createClient } from '@/lib/supabase/client'
 import type { Task } from '@/lib/tasks'
 
@@ -129,6 +130,7 @@ export function useTasks() {
         note: null,
         quadrant: null,
         status: 'inbox',
+        routine_id: null,
         scheduled_date: null,
         scheduled_end_date: null,
         scheduled_time: null,
@@ -226,6 +228,170 @@ export function useTasks() {
     [patch],
   )
 
+  /**
+   * 인박스 항목을 반복 루틴으로 만든다 (사장님 지시 2026-08-03).
+   * 규칙은 routines에, 발생 일자는 보통의 tasks 행으로 미리 깔린다 —
+   * 원래 항목이 첫 발생이 되고 나머지는 새 행으로 들어간다.
+   */
+  const createRoutine = useCallback(
+    async (task: Task, freq: RoutineFreq, days: number[], time: string | null) => {
+      // 화면 밖에서 새어 들어온 값 방어 (리뷰 발견: weekly↔monthly 전환 잔존값).
+      // 요일은 0~6, 월 날짜는 1~31만 유효하다.
+      const validDays = [...new Set(days)]
+        .filter((d) => (freq === 'weekly' ? d >= 0 && d <= 6 : d >= 1 && d <= 31))
+        .sort((a, b) => a - b)
+
+      const dates = computeOccurrences(freq, validDays)
+      if (validDays.length === 0 || dates.length === 0) {
+        notify('만들 수 있는 날짜가 없습니다.')
+        return false
+      }
+
+      const [first, ...rest] = dates
+      const last = dates[dates.length - 1]
+
+      const routineId = crypto.randomUUID()
+      // generated_until은 일단 첫 발생까지로 잡는다 — 나머지 생성이 실패하면
+      // 다음 top-up이 이어서 채운다 (자가 치유).
+      const { error: routineError } = await supabase.from('routines').insert({
+        id: routineId,
+        title: task.title,
+        freq,
+        byweekday: freq === 'weekly' ? validDays : null,
+        bymonthday: freq === 'monthly' ? validDays : null,
+        scheduled_time: time,
+        generated_until: first,
+      })
+      if (routineError) {
+        notify('루틴을 만들지 못했습니다.')
+        return false
+      }
+      const ok = await patch(
+        task.id,
+        {
+          quadrant: SCHEDULE_ON_CLASSIFY,
+          status: 'active',
+          scheduled_date: first,
+          scheduled_end_date: null,
+          scheduled_time: time,
+          routine_id: routineId,
+        },
+        '루틴 일정을 저장하지 못했습니다.',
+      )
+
+      if (!ok) {
+        // 보상 삭제 (리뷰 발견: 고아 루틴). 규칙만 남으면 다음 실행 때
+        // 실패했다고 안내한 일정이 몰래 생성되고, 재시도하면 통째로 중복된다.
+        await supabase.from('routines').delete().eq('id', routineId)
+        return false
+      }
+
+      if (rest.length > 0) {
+        const rows = rest.map((date) => ({
+          id: crypto.randomUUID(),
+          title: task.title,
+          quadrant: SCHEDULE_ON_CLASSIFY,
+          status: 'active',
+          scheduled_date: date,
+          scheduled_time: time,
+          routine_id: routineId,
+        }))
+        const { error: bulkError } = await supabase
+          .from('tasks')
+          .upsert(rows, { onConflict: 'routine_id,scheduled_date', ignoreDuplicates: true })
+
+        if (bulkError) {
+          // generated_until이 first에 머물러 있으므로 다음 top-up이 이어서 채운다
+          notify('반복 일정 일부를 만들지 못했습니다. 앱을 다시 열면 채워집니다.')
+        } else {
+          await supabase.from('routines').update({ generated_until: last }).eq('id', routineId)
+          const now = new Date().toISOString()
+          const fullRows: Task[] = rows.map((r) => ({
+            ...r,
+            user_id: '',
+            note: null,
+            scheduled_end_date: null,
+            created_at: now,
+            completed_at: null,
+            dropped_at: null,
+          }))
+          setTasks((prev) => [...fullRows, ...prev])
+        }
+      }
+      return ok
+    },
+    [notify, patch, supabase],
+  )
+
+  /*
+   * 루틴 발생 일자를 지평만큼 "이어서" 채운다. 앱을 열 때 한 번.
+   *
+   * 핵심은 generated_until 고수위다 (리뷰 발견 반영): 이미 생성한 구간 안에서는
+   * 사용자가 발생을 옮기든 지우든 절대 다시 만들지 않는다 — 그 너머만 만든다.
+   * 유니크 + on conflict ignore는 여러 기기가 동시에 돌 때의 안전벨트로만 남는다.
+   */
+  const toppedUp = useRef(false)
+  useEffect(() => {
+    if (toppedUp.current) return
+    toppedUp.current = true
+
+    void (async () => {
+      const { data: routines } = await supabase
+        .from('routines')
+        .select('*')
+        .eq('active', true)
+      if (!routines || routines.length === 0) return
+
+      const rows: {
+        id: string
+        title: string
+        quadrant: number
+        status: string
+        scheduled_date: string
+        scheduled_time: string | null
+        routine_id: string
+      }[] = []
+      const advanceTo = new Map<string, string>()
+
+      for (const routine of routines) {
+        const occurrences = computeOccurrences(
+          routine.freq as RoutineFreq,
+          (routine.freq === 'weekly' ? routine.byweekday : routine.bymonthday) ?? [],
+        )
+        if (occurrences.length === 0) continue
+
+        const horizonEnd = occurrences[occurrences.length - 1]
+        const fresh = occurrences.filter((d) => d > (routine.generated_until ?? ''))
+        if (fresh.length === 0) continue
+
+        for (const date of fresh) {
+          rows.push({
+            id: crypto.randomUUID(),
+            title: routine.title,
+            quadrant: SCHEDULE_ON_CLASSIFY,
+            status: 'active',
+            scheduled_date: date,
+            scheduled_time: routine.scheduled_time,
+            routine_id: routine.id,
+          })
+        }
+        advanceTo.set(routine.id, horizonEnd)
+      }
+      if (rows.length === 0) return
+
+      const { error } = await supabase
+        .from('tasks')
+        .upsert(rows, { onConflict: 'routine_id,scheduled_date', ignoreDuplicates: true })
+      if (error) return
+
+      // 삽입이 성공한 뒤에만 고수위를 올린다 — 실패하면 다음 기회에 다시 시도된다
+      for (const [routineId, until] of advanceTo) {
+        await supabase.from('routines').update({ generated_until: until }).eq('id', routineId)
+      }
+      void reload()
+    })()
+  }, [supabase, reload])
+
   const reschedule = useCallback(
     (
       id: string,
@@ -239,6 +405,14 @@ export function useTasks() {
           scheduled_date: scheduledDate,
           scheduled_end_date: scheduledDate ? scheduledEndDate : null,
           scheduled_time: scheduledDate ? scheduledTime : null,
+          /*
+           * 루틴 발생을 손으로 편집하면 루틴에서 떨어져 나와 일회성이 된다
+           * (구글캘린더의 "이 일정만 변경"과 같은 의미 — 리뷰 발견 반영).
+           * 이걸 안 끊으면: 같은 루틴의 다른 발생 날짜로 옮길 때 유니크 충돌로
+           * 저장이 항상 실패하고, top-up 고수위와도 얽힌다.
+           * 루틴이 아닌 항목은 어차피 null이라 무해하다.
+           */
+          routine_id: null,
         },
         '날짜를 저장하지 못했습니다.',
       ),
@@ -251,6 +425,7 @@ export function useTasks() {
     toast,
     capture,
     classify,
+    createRoutine,
     complete,
     undoTarget,
     undoComplete,
