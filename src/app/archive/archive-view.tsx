@@ -33,7 +33,7 @@ export function ArchiveView() {
     const blob = new Blob(
       [
         JSON.stringify(
-          { app: '사분면 스케줄러', exportedAt: new Date().toISOString(), count: all.length, tasks: all },
+          { app: 'Q-Do', exportedAt: new Date().toISOString(), count: all.length, tasks: all },
           null,
           2,
         ),
@@ -44,7 +44,7 @@ export function ArchiveView() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `사분면-백업-${todayISO()}.json`
+    link.download = `Q-Do-백업-${todayISO()}.json`
     link.click()
     URL.revokeObjectURL(url)
     setExportState('idle')

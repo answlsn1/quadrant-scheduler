@@ -1,8 +1,8 @@
 import { InstallView } from './install-view'
 
 export const metadata = {
-  title: '설치 · 사분면',
-  description: '사분면 스케줄러를 폰에 앱으로 설치하는 방법',
+  title: '설치',
+  description: 'Q-Do를 폰에 앱으로 설치하는 방법',
 }
 
 /**

@@ -6,9 +6,9 @@ import type { MetadataRoute } from 'next'
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '사분면 스케줄러',
-    short_name: '사분면',
-    description: '캡처 → 분류 → 실행. 1인용 우선순위 도구.',
+    name: 'Q-Do',
+    short_name: 'Q-Do',
+    description: '중요한 일에 먼저 집중하는 4분면 스케줄러',
     lang: 'ko',
     start_url: '/',
     scope: '/',

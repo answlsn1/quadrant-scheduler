@@ -96,19 +96,14 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
                 <span className="text-warn">미배치</span>
               )}
             </span>
-          ) : isNow && (task.scheduled_time || task.scheduled_date) ? (
+          ) : isNow && task.scheduled_time ? (
             /*
-             * 1번은 보통 "오늘"이라 날짜가 노이즈지만, 항상 그런 건 아니다 —
-             * 2번(예정)에서 칸을 옮겨오면 미래·과거 날짜가 딸려 온다.
-             * 그때 시간만 찍으면 오늘 그 시각으로 읽히므로, 오늘이 아닐 때만
-             * 날짜를 함께 보여준다. (리뷰 발견 2026-08-04)
+             * 1번은 오늘 할 것이라 날짜는 노이즈다. 시간만 보여준다.
+             * 이 전제는 데이터 쪽에서 지킨다 — 1번의 날짜는 오늘 아니면 없다
+             * (분류·칸 이동 모두 오늘로 맞춘다. use-tasks의 moveQuadrant 참고).
              */
             <span className="mt-1 block text-xs text-muted">
-              {task.scheduled_date && task.scheduled_date !== todayISO()
-                ? formatSchedule(task)
-                : task.scheduled_time
-                  ? formatTime(task.scheduled_time)
-                  : null}
+              {formatTime(task.scheduled_time)}
             </span>
           ) : null}
         </span>
@@ -222,22 +217,6 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
                   className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
                 />
               </label>
-
-              {/*
-                2번에서 옮겨오면 다른 날 날짜가 딸려 온다. 1번에는 날짜 편집기가
-                없어 그대로 두면 어정쩡하게 남으므로, 한 탭으로 정리할 통로를 준다.
-              */}
-              {task.scheduled_date && task.scheduled_date !== todayISO() ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onReschedule(task.id, todayISO(), null, task.scheduled_time)
-                  }
-                  className="min-h-[44px] w-full rounded-lg border border-dashed border-border text-[13px] text-muted"
-                >
-                  오늘 날짜로 당기기
-                </button>
-              ) : null}
             </>
           ) : null}
 
@@ -283,7 +262,7 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
                   onClick={() => setMovingOpen(false)}
                   className="mt-1.5 min-h-[44px] w-full text-[13px] text-muted underline"
                 >
-                  그만두기
+                  돌아가기
                 </button>
               </div>
             ) : (

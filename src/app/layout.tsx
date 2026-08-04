@@ -15,12 +15,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "사분면",
-  description: "캡처 → 분류 → 실행. 1인용 우선순위 도구.",
-  applicationName: "사분면",
+  // 하위 페이지는 제목만 적으면 "Q-Do | 로그인" 형태로 완성된다
+  title: {
+    default: "Q-Do",
+    template: "Q-Do | %s",
+  },
+  description: "중요한 일에 먼저 집중하는 4분면 스케줄러",
+  applicationName: "Q-Do",
   appleWebApp: {
     capable: true,
-    title: "사분면",
+    title: "Q-Do",
     statusBarStyle: "black-translucent",
   },
   icons: {

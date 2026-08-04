@@ -110,8 +110,8 @@ export function InstallView() {
         {/* eslint-disable-next-line @next/next/no-img-element -- 정적 아이콘 하나에 최적화 파이프라인이 필요 없다 */}
         <img src="/icons/icon-192.png" alt="" width={56} height={56} className="rounded-xl" />
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">사분면 스케줄러</h1>
-          <p className="mt-0.5 text-sm text-muted">캡처 → 분류 → 실행</p>
+          <h1 className="text-[24px] font-semibold leading-none tracking-[-0.04em]">Q-Do</h1>
+          <p className="mt-1.5 text-sm text-muted">중요한 일에 먼저 집중하는 4분면 스케줄러</p>
         </div>
       </div>
 

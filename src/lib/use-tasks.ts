@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DROP_ON_CLASSIFY, SCHEDULE_ON_CLASSIFY, type Quadrant } from '@/lib/quadrant'
 import { computeOccurrences, type RoutineFreq } from '@/lib/routines'
 import { createClient } from '@/lib/supabase/client'
-import type { Task } from '@/lib/tasks'
+import { todayISO, type Task } from '@/lib/tasks'
 
 /**
  * 단일 데이터 소스. 1인용 도구라 전체를 한 번에 받아 화면에서 나눠 쓴다.
@@ -205,15 +205,34 @@ export function useTasks() {
       if (task.quadrant === quadrant) return Promise.resolve(true)
 
       const now = new Date().toISOString()
-      const changes: Partial<Task> =
-        quadrant === DROP_ON_CLASSIFY
-          ? { quadrant, status: 'dropped', dropped_at: now, routine_id: null }
-          : {
-              quadrant,
-              status: 'active',
-              scheduled_end_date: quadrant === SCHEDULE_ON_CLASSIFY ? task.scheduled_end_date : null,
-              routine_id: null,
-            }
+      let changes: Partial<Task>
+
+      if (quadrant === DROP_ON_CLASSIFY) {
+        changes = { quadrant, status: 'dropped', dropped_at: now, routine_id: null }
+      } else if (quadrant === 1) {
+        /*
+         * 1번은 "오늘 할 것"이다. 미래 날짜를 들고 오면 의미가 모순되고
+         * (8/30 일정이 오늘 목록에 뜬다), 화면에도 남의 날짜가 찍힌다.
+         * 그래서 옮기는 순간 오늘로 당긴다 — 1번으로 옮긴다는 건
+         * "오늘 하겠다"는 선언이다. 시간은 살린다.
+         * 시간이 없으면 날짜를 들고 있을 이유도 없으므로 비운다.
+         */
+        changes = {
+          quadrant,
+          status: 'active',
+          scheduled_date: task.scheduled_time ? todayISO() : null,
+          scheduled_end_date: null,
+          routine_id: null,
+        }
+      } else {
+        changes = {
+          quadrant,
+          status: 'active',
+          // 기간(끝 날짜)은 2번 전용 개념이라 다른 칸으로 가면 지운다
+          scheduled_end_date: quadrant === SCHEDULE_ON_CLASSIFY ? task.scheduled_end_date : null,
+          routine_id: null,
+        }
+      }
 
       return patch(task.id, changes, '칸을 옮기지 못했습니다.')
     },

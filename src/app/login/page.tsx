@@ -3,7 +3,7 @@ import { safeNext } from '@/lib/auth'
 import { LoginForm } from './login-form'
 
 export const metadata = {
-  title: '로그인 · 사분면',
+  title: '로그인',
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -23,8 +23,15 @@ export default async function LoginPage({
   return (
     <main className="app-shell flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
-        <h1 className="text-xl font-medium">사분면</h1>
-        <p className="mt-1 text-sm text-muted">캡처 → 분류 → 실행</p>
+        {/*
+          워드마크. 짧은 영문 두 음절이라 기본 자간이면 헐거워 보인다 —
+          -0.04em으로 조여서 하나의 덩어리로 읽히게 하고, semibold로
+          다크 배경에서 또렷하되 무겁지 않게 잡았다.
+        */}
+        <h1 className="text-[28px] font-semibold leading-none tracking-[-0.04em]">Q-Do</h1>
+        <p className="mt-2.5 text-sm leading-relaxed text-muted">
+          중요한 일에 먼저 집중하는 4분면 스케줄러
+        </p>
 
         {message ? (
           <p

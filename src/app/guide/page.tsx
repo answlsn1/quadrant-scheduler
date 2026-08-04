@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { BOARD_ORDER, QUADRANT_SPEC } from '@/lib/quadrant'
 
 export const metadata = {
-  title: '사용법 · 사분면',
-  description: '사분면 스케줄러가 무엇이고 어떻게 쓰는지',
+  title: '사용법',
+  description: 'Q-Do가 무엇이고 어떻게 쓰는지',
 }
 
 /**
