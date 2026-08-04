@@ -16,7 +16,7 @@ import { useTasks } from '@/lib/use-tasks'
  * 그날의 일정이 시간순으로 아래에 뜬다. 기간 일정은 걸친 모든 날에 보인다.
  */
 export function CalendarView() {
-  const { tasks, loading, toast, complete, drop, reschedule } = useTasks()
+  const { tasks, loading, toast, complete, drop, reschedule, moveQuadrant } = useTasks()
 
   const today = todayISO()
   const [anchor, setAnchor] = useState(() => {
@@ -140,6 +140,7 @@ export function CalendarView() {
                       onComplete={complete}
                       onDrop={drop}
                       onReschedule={reschedule}
+                      onMove={moveQuadrant}
                     />
                   ))}
                 </ul>

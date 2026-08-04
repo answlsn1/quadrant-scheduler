@@ -188,6 +188,38 @@ export function useTasks() {
   const [undoTarget, setUndoTarget] = useState<Task | null>(null)
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  /**
+   * 이미 분류된 항목을 다른 칸으로 옮긴다 (사장님 지시 2026-08-04).
+   *
+   * `classify`(인박스 → 칸)와 다른 점은 **기존 일정을 보존**한다는 것이다.
+   * 옮긴다고 날짜를 날려버리면 사용자가 다시 잡아야 한다.
+   * 다만 칸의 의미가 바뀌므로 최소한의 정리는 한다:
+   *  - 4번(버린다)으로 → 강제 동사대로 즉시 버림 처리
+   *  - 2번(일정)이 아닌 칸으로 → 기간(끝 날짜)은 2번 전용이라 지운다.
+   *    시작 날짜와 시간은 남긴다 (1번은 시간을, 3번도 날짜를 쓸 수 있다)
+   *  - 루틴 발생을 다른 칸으로 옮기면 루틴에서 분리한다 —
+   *    "이 발생만 성격이 달라졌다"는 뜻이고, top-up이 되살리지 않게 한다
+   */
+  const moveQuadrant = useCallback(
+    (task: Task, quadrant: Quadrant) => {
+      if (task.quadrant === quadrant) return Promise.resolve(true)
+
+      const now = new Date().toISOString()
+      const changes: Partial<Task> =
+        quadrant === DROP_ON_CLASSIFY
+          ? { quadrant, status: 'dropped', dropped_at: now, routine_id: null }
+          : {
+              quadrant,
+              status: 'active',
+              scheduled_end_date: quadrant === SCHEDULE_ON_CLASSIFY ? task.scheduled_end_date : null,
+              routine_id: null,
+            }
+
+      return patch(task.id, changes, '칸을 옮기지 못했습니다.')
+    },
+    [patch],
+  )
+
   const complete = useCallback(
     async (id: string) => {
       const snapshot = tasksRef.current.find((t) => t.id === id) ?? null
@@ -426,6 +458,7 @@ export function useTasks() {
     capture,
     classify,
     createRoutine,
+    moveQuadrant,
     complete,
     undoTarget,
     undoComplete,

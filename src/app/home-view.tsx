@@ -52,6 +52,7 @@ export function HomeView() {
     capture,
     classify,
     createRoutine,
+    moveQuadrant,
     complete,
     undoTarget,
     undoComplete,
@@ -330,6 +331,7 @@ export function HomeView() {
                   onComplete={complete}
                   onDrop={drop}
                   onReschedule={reschedule}
+                  onMove={moveQuadrant}
                 />
                 <Section
                   quadrant={2}
@@ -339,6 +341,7 @@ export function HomeView() {
                   onComplete={complete}
                   onDrop={drop}
                   onReschedule={reschedule}
+                  onMove={moveQuadrant}
                 />
                 <details className="rounded-xl border border-dashed border-border">
                   <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3.5 text-[13px] text-muted">
@@ -362,6 +365,7 @@ export function HomeView() {
                           onComplete={complete}
                           onDrop={drop}
                           onReschedule={reschedule}
+                          onMove={moveQuadrant}
                         />
                       ))
                     )}
@@ -378,6 +382,7 @@ export function HomeView() {
                   onComplete={complete}
                   onDrop={drop}
                   onReschedule={reschedule}
+                  onMove={moveQuadrant}
                 />
               </div>
             )}
@@ -396,6 +401,7 @@ export function HomeView() {
                     onComplete={complete}
                     onDrop={drop}
                     onReschedule={reschedule}
+                    onMove={moveQuadrant}
                   />
                 ))}
               </div>
@@ -486,6 +492,7 @@ function Section({
   onComplete,
   onDrop,
   onReschedule,
+  onMove,
 }: {
   quadrant: Quadrant
   /** 홈은 상태 언어("오늘 할 것", "예정된 일정"). 강제 동사는 분류 버튼의 것이다. */
@@ -495,6 +502,7 @@ function Section({
   onComplete: (id: string) => void
   onDrop: (id: string) => void
   onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
+  onMove: (task: Task, quadrant: Quadrant) => void
 }) {
   return (
     <section>
@@ -516,6 +524,7 @@ function Section({
               onComplete={onComplete}
               onDrop={onDrop}
               onReschedule={onReschedule}
+              onMove={onMove}
             />
           ))
         )}
@@ -537,6 +546,7 @@ function QuadrantCell({
   onComplete,
   onDrop,
   onReschedule,
+  onMove,
 }: {
   quadrant: Quadrant
   tasks: Task[]
@@ -545,6 +555,7 @@ function QuadrantCell({
   onComplete: (id: string) => void
   onDrop: (id: string) => void
   onReschedule: (id: string, start: string | null, end: string | null, time: string | null) => void
+  onMove: (task: Task, quadrant: Quadrant) => void
 }) {
   const spec = QUADRANT_SPEC[quadrant]
   const color = quadrantColor(quadrant)
@@ -615,6 +626,7 @@ function QuadrantCell({
                   onComplete={onComplete}
                   onDrop={onDrop}
                   onReschedule={onReschedule}
+                  onMove={onMove}
                 />
               ))}
             </ul>
