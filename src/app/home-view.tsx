@@ -7,6 +7,7 @@ import { AccountMenu } from '@/components/account-menu'
 import { AppNav } from '@/components/app-nav'
 import { CaptureBar } from '@/components/capture-bar'
 import { ClassifyPanel } from '@/components/classify-panel'
+import { QuadrantBadge } from '@/components/quadrant-badge'
 import { TaskItem } from '@/components/task-item'
 import { Toast } from '@/components/toast'
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/lib/quadrant'
 import {
   daysFromToday,
+  formatDateLong,
   isActive,
   isInbox,
   isUnscheduledPlan,
@@ -232,10 +234,17 @@ export function HomeView() {
   return (
     <div className="app-shell flex flex-col">
       <main className="flex-1 overflow-y-auto px-4 pt-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold tracking-tight">오늘의 일정</h1>
-          <div className="flex items-center gap-2">
-            {/* 분류 탭이 없어졌으므로 쌓인 인박스는 여기서 몰아서 분류한다 */}
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {/* 이 화면의 주어는 "오늘"이다. 며칠인지를 앱이 먼저 말해준다. */}
+            <p className="text-[11px] tracking-[0.04em] text-muted">{formatDateLong(today)}</p>
+            <h1 className="mt-0.5 text-[25px] font-bold leading-[1.05] tracking-[-0.03em]">
+              오늘의 일정
+            </h1>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* 분류 탭이 없어졌으므로 쌓인 인박스는 여기서 몰아서 분류한다.
+                처리할 게 있으면 채워서 눈에 걸리게, 0이면 조용히 가라앉힌다. */}
             <button
               type="button"
               disabled={inbox.length === 0}
@@ -244,10 +253,10 @@ export function HomeView() {
                 setClassifyFocusId(null)
                 setClassifyMode('inbox')
               }}
-              className={`min-h-[36px] rounded-full border px-3 text-xs tabular-nums transition-colors duration-150 ${
+              className={`press min-h-[34px] rounded-full px-3 text-xs font-medium tabular-nums transition-colors duration-150 ${
                 inbox.length > 0
-                  ? 'border-[color-mix(in_srgb,var(--accent)_45%,transparent)] text-[var(--accent)]'
-                  : 'border-border text-muted'
+                  ? 'bg-[var(--accent)] text-background'
+                  : 'border border-border text-muted'
               }`}
             >
               인박스 {inbox.length}
@@ -261,7 +270,8 @@ export function HomeView() {
           <button
             type="button"
             onClick={revealUnscheduled}
-            className="mt-4 flex w-full items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--warn)_32%,transparent)] bg-[color-mix(in_srgb,var(--warn)_10%,transparent)] px-3.5 py-3 text-[13px] text-warn"
+            style={{ borderLeftWidth: 3, borderLeftColor: 'var(--warn)' }}
+            className="press mt-4 flex w-full items-center gap-2 rounded-lg rounded-r-xl border border-[color-mix(in_srgb,var(--warn)_26%,transparent)] bg-[color-mix(in_srgb,var(--warn)_13%,transparent)] px-3.5 py-3 text-[13px] text-warn"
           >
             <span>날짜 없는 일정</span>
             <b className="tabular-nums">{unscheduledPlan.length}</b>
@@ -299,8 +309,12 @@ export function HomeView() {
           </div>
         ) : null}
 
-        {/* 오늘 / 내일 서브탭 */}
-        <div className="mt-5 grid grid-cols-2 gap-2" role="tablist" aria-label="날짜 선택">
+        {/* 오늘 / 내일 서브탭 — 선택된 칸이 실제로 떠오르는 세그먼트 컨트롤 */}
+        <div
+          className="mt-5 grid grid-cols-2 gap-1 rounded-xl border border-border bg-surface p-1"
+          role="tablist"
+          aria-label="날짜 선택"
+        >
           <DayTabButton
             active={dayTab === 'today'}
             count={queueNow.length + dueToday.length}
@@ -344,15 +358,10 @@ export function HomeView() {
                   onMove={moveQuadrant}
                 />
                 <details className="rounded-xl border border-dashed border-border">
-                  <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-3.5 text-[13px] text-muted">
-                    <span className="flex items-center gap-2">
-                      <i
-                        className="h-[7px] w-[7px] rounded-full"
-                        style={{ background: quadrantColor(3) }}
-                      />
-                      3 · {QUADRANT_SPEC[3].verb}
-                    </span>
-                    <span className="tabular-nums">{batch.length}개 ⌄</span>
+                  <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-3 text-[13px] text-muted">
+                    <QuadrantBadge quadrant={3} />
+                    <span className="font-medium">{QUADRANT_SPEC[3].verb}</span>
+                    <span className="ml-auto tabular-nums">{batch.length}개 ⌄</span>
                   </summary>
                   <ul className="px-2 pb-2">
                     {batch.length === 0 ? (
@@ -438,7 +447,8 @@ export function HomeView() {
           />
         ) : (
           <>
-            <p className="px-4 pt-2.5 text-[11px] font-medium tracking-wide text-muted">
+            {/* 이 앱의 심장이다. 늘 "여기 쓰라"고 말하고 있어야 한다. */}
+            <p className="px-4 pt-2.5 text-[10.5px] font-semibold tracking-[0.05em] text-[var(--accent)]">
               생각꺼내기
             </p>
             <CaptureBar onCapture={handleCapture} />
@@ -468,15 +478,21 @@ function DayTabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border text-sm transition-colors duration-150 ${
+      className={`flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg text-sm transition-colors duration-150 ${
         active
-          ? 'border-foreground font-medium text-foreground'
-          : 'border-border text-muted'
+          ? 'bg-surface-hi font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_2px_8px_rgba(0,0,0,0.4)]'
+          : 'text-muted'
       }`}
     >
       {children}
       {count > 0 ? (
-        <span className="min-w-[18px] rounded-full bg-foreground px-1.5 text-center text-[11px] font-medium tabular-nums text-background">
+        <span
+          className={`min-w-[18px] rounded-full px-1.5 text-center text-[11px] font-semibold tabular-nums ${
+            active
+              ? 'bg-[var(--q1)] text-background'
+              : 'bg-[color-mix(in_srgb,var(--muted)_22%,transparent)] text-muted'
+          }`}
+        >
           {count}
         </span>
       ) : null}
@@ -506,14 +522,14 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="flex items-center gap-2 text-[11px] tracking-wide text-muted">
-        <i
-          className="h-[7px] w-[7px] rounded-full"
-          style={{ background: quadrantColor(quadrant) }}
-        />
-        {quadrant} · {label}
+      <h2 className="flex items-center gap-2">
+        <QuadrantBadge quadrant={quadrant} solid />
+        <span className="text-[13px] font-semibold tracking-[-0.01em]">{label}</span>
+        {tasks.length > 0 ? (
+          <span className="ml-auto text-[11.5px] tabular-nums text-muted">{tasks.length}</span>
+        ) : null}
       </h2>
-      <ul className="mt-2">
+      <ul className="mt-2.5">
         {tasks.length === 0 ? (
           <li className="py-2 text-sm text-muted">{empty}</li>
         ) : (
@@ -564,7 +580,10 @@ function QuadrantCell({
 
   return (
     <section
-      style={{ borderColor: `color-mix(in srgb, ${color} 34%, transparent)` }}
+      style={{
+        borderColor: `color-mix(in srgb, ${color} 34%, transparent)`,
+        background: `linear-gradient(180deg, var(--surface), transparent)`,
+      }}
       className="overflow-hidden rounded-xl border"
     >
       {/* 칸 제목은 강제 동사가 아니라 정의 그대로 (사장님 결정 2026-08-03) */}
@@ -572,24 +591,19 @@ function QuadrantCell({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex min-h-[52px] w-full items-center gap-2 px-3.5 py-3 text-left"
+        className="press flex min-h-[52px] w-full items-center gap-2.5 px-3 py-3 text-left"
       >
-        <i className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: color }} />
-        <span className="text-[13px] text-muted">
-          {spec.id} · {spec.axis}
-        </span>
+        <QuadrantBadge quadrant={quadrant} />
+        <span className="text-[12.5px] text-muted">{spec.axis}</span>
 
-        {/* 접힌 상태의 주인공은 개수다 — 크게, 칸 색으로 */}
+        {/* 접힌 상태의 주인공은 개수다 — 채워서, 칸 색으로 */}
         <span
           style={
             hasItems && !isDropCell
-              ? {
-                  color,
-                  background: `color-mix(in srgb, ${color} 14%, transparent)`,
-                }
+              ? { background: color, color: 'var(--background)' }
               : undefined
           }
-          className={`ml-auto min-w-[34px] rounded-lg px-2 py-1 text-center text-[15px] font-semibold tabular-nums ${
+          className={`ml-auto min-w-[32px] rounded-lg px-2 py-1 text-center text-[15px] font-bold tabular-nums ${
             hasItems && !isDropCell ? '' : 'text-muted'
           }`}
         >

@@ -7,12 +7,20 @@
  * 알아야 한다. 그래서 1번만 채도가 높고, 4번은 배경에 잠긴다.
  * 버릴 것이 눈에 띄면 안 되기 때문이다.
  */
+/*
+ * 층위 강화 (2026-08-04 시안 확정).
+ * 바닥을 낮추고 카드를 올려 화면을 세 겹으로 세운다 —
+ * 이전에는 배경과 카드의 명도 차가 거의 없어 카드가 배경에 붙어 보였다.
+ * 카드는 surface-hi → surface 세로 그라데이션으로 위에서 빛을 받는다.
+ */
 :root {
-  --background: #0a0a0c; /* 순수 검정 대신 미세한 청색 편향 */
-  --surface: #131318;
-  --foreground: #e8e8ea;
+  --background: #08080a; /* 순수 검정 대신 미세한 청색 편향 */
+  --surface: #15151b;
+  --surface-hi: #1d1d25; /* 카드 윗면·눌린 세그먼트 */
+  --foreground: #ededf0;
   --muted: #7c7c85;
-  --border: #232329;
+  --border: #26262e;
+  --border-hi: #383843; /* 떠 있는 요소의 테두리 */
 
   /* 번호는 표준 아이젠하워 순서 (2026-08-03 재편). 색은 의미를 따라간다 —
      teal은 "일정에 넣는다"의 색이라 번호가 3→2로 옮겨갈 때 같이 왔다. */
@@ -28,9 +36,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-hi: var(--surface-hi);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-hi: var(--border-hi);
   --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -88,6 +98,25 @@ button {
   [role='button'],
   button:not(:disabled) {
     cursor: pointer;
+  }
+}
+
+/*
+ * 떠 있는 카드. 위에서 빛을 받는 미세 그라데이션 + 테두리로
+ * 배경에서 한 겹 올라온다. 좌측 사분면 스트라이프는 인라인 style로 색만 준다.
+ */
+.card-raise {
+  background: linear-gradient(180deg, var(--surface-hi), var(--surface));
+  border: 1px solid var(--border);
+}
+
+/* 손가락이 먼저 알게 하는 눌림 반응. 모션 설정을 끈 사람에겐 적용되지 않는다. */
+@media (prefers-reduced-motion: no-preference) {
+  .press {
+    transition: transform 120ms ease;
+  }
+  .press:active {
+    transform: scale(0.985);
   }
 }
 

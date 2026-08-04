@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 /**
@@ -146,9 +147,9 @@ export function InstallView() {
         ))}
       </div>
 
-      <a href="/" className="mt-10 text-center text-sm text-muted underline">
+      <Link href="/" className="mt-10 text-center text-sm text-muted underline">
         이미 설치했다면 열기 →
-      </a>
+      </Link>
     </main>
   )
 }

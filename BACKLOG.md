@@ -8,6 +8,15 @@ v1 스코프를 침범하지 않기 위해 여기 적어두고 넘어간 것들.
 - `title`에 공백 방지 CHECK 제약 (`length(btrim(title)) > 0`). 지금은 앱 코드에서만 막는다.
   스키마 변경이라 게이트 항목이라 미뤘다.
 
+## 품질 정리 (기능 아님)
+
+- **`npm run lint` 11건 남음** — `react-hooks/set-state-in-effect`, `react-hooks/immutability`.
+  `useEffect` 안에서 `setState`하거나 `useRef.current`를 콜백에서 쓰는 패턴들이다
+  (localStorage 복원, 탭 복귀 리로드, 토스트 타이머 등). 전부 동작은 검증됐고
+  `next build`는 lint를 돌리지 않아 배포에 영향이 없다. 다만 React Compiler를 켜면
+  문제가 될 수 있으니 손볼 때 한 번에 정리한다. 지금 고치면 잘 도는 훅 로직을
+  건드리는 위험이 이득보다 크다.
+
 ## v1.1 후보
 
 - **아카이브에서 되돌리기** — 실수로 완료·버림 처리하면 지금은 복구 경로가 없다. 작업지시서 화면 구성에 없어서 만들지 않았다.

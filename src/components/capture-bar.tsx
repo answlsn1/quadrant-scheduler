@@ -47,13 +47,13 @@ export function CaptureBar({
           spellCheck={false}
           placeholder="떠오르는 것을 그냥 적어보자"
           aria-label="캡처"
-          className="min-h-[52px] w-full rounded-xl border border-border bg-surface py-3.5 pl-4 pr-14 caret-[var(--accent)] outline-none placeholder:text-muted focus:border-[var(--accent)]"
+          className="min-h-[52px] w-full rounded-xl border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-surface-hi py-3.5 pl-4 pr-14 shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_7%,transparent)] caret-[var(--accent)] outline-none placeholder:text-muted focus:border-[var(--accent)]"
         />
         <button
           type="submit"
           disabled={!draft.trim()}
           aria-label="저장"
-          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-[var(--accent)] text-background transition-opacity duration-150 disabled:opacity-25"
+          className="press absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-[var(--accent)] text-background transition-opacity duration-150 disabled:opacity-25"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <path

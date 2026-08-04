@@ -31,6 +31,14 @@ export function formatDate(iso: string): string {
   return `${m}월 ${d}일 (${weekday})`
 }
 
+/** '2026-08-04' → '8월 4일 화요일' — 홈 헤더의 날짜 줄 */
+export function formatDateLong(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]
+  return `${m}월 ${d}일 ${weekday}요일`
+}
+
 /** DB의 '14:30:00' → 화면의 '14:30' */
 export function formatTime(time: string): string {
   return time.slice(0, 5)

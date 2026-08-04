@@ -28,8 +28,8 @@ export function AppNav() {
             key={item.href}
             href={item.href}
             aria-current={active ? 'page' : undefined}
-            className={`flex min-h-[52px] items-center justify-center text-[13px] ${
-              active ? 'text-foreground' : 'text-muted'
+            className={`flex min-h-[52px] items-center justify-center text-[13px] transition-colors duration-150 ${
+              active ? 'font-semibold text-[var(--accent)]' : 'text-muted'
             }`}
           >
             {item.label}

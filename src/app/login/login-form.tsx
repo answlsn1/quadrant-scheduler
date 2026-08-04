@@ -37,12 +37,12 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
-    <div className="mt-10 flex flex-col gap-3">
+    <div className="mt-9 flex flex-col gap-3">
       <button
         type="button"
         onClick={signInWithGoogle}
         disabled={!hydrated || pending}
-        className="flex min-h-[52px] items-center justify-center gap-2.5 rounded-xl bg-foreground px-4 font-medium text-background disabled:opacity-50"
+        className="press flex min-h-[54px] items-center justify-center gap-2.5 rounded-xl bg-foreground px-4 text-[15px] font-semibold text-background shadow-[0_4px_20px_rgba(0,0,0,0.5)] disabled:opacity-50"
       >
         <GoogleMark />
         {pending ? '구글로 이동 중' : '구글로 로그인'}

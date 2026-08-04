@@ -20,6 +20,18 @@ import {
 /** 완료 표시를 눈으로 보고 나서 목록에서 빠지게 하는 시간 */
 const COMPLETE_ANIM_MS = 240
 
+/**
+ * 시간은 모노 폰트 칩으로 (2026-08-04 시안 확정).
+ * 숫자가 제목 글줄에 섞이지 않고 따로 스캔된다.
+ */
+function TimeChip({ time }: { time: string }) {
+  return (
+    <span className="rounded bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-1.5 py-0.5 font-mono text-[10.5px] text-[var(--accent)]">
+      {formatTime(time)}
+    </span>
+  )
+}
+
 type Props = {
   task: Task
   onComplete: (id: string) => void
@@ -73,7 +85,7 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
   return (
     <li
       style={{ borderLeftColor: color }}
-      className={`mb-1.5 overflow-hidden rounded-xl border-l-[3px] bg-surface transition-all duration-200 ${
+      className={`card-raise mb-1.5 overflow-hidden rounded-xl border-l-[3px] transition-all duration-200 ${
         completing ? 'opacity-35' : 'opacity-100'
       }`}
     >
@@ -81,19 +93,24 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex min-h-[52px] w-full items-center gap-3 px-3.5 py-3 text-left"
+        className="press flex min-h-[52px] w-full items-center gap-3 px-3.5 py-3 text-left"
       >
         <span className="min-w-0 flex-1">
           <span className="block text-sm leading-snug">{task.title}</span>
           {isSchedule ? (
-            <span className="mt-1 block text-xs">
+            <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
               {schedule ? (
-                <span className={overdue ? 'text-warn' : 'text-muted'}>
-                  {schedule}
-                  {overdue ? ' · 지남' : ''}
-                </span>
+                <>
+                  {task.scheduled_time ? <TimeChip time={task.scheduled_time} /> : null}
+                  <span className={overdue ? 'text-warn' : 'text-muted'}>
+                    {formatSchedule({ ...task, scheduled_time: null })}
+                    {overdue ? ' · 지남' : ''}
+                  </span>
+                </>
               ) : (
-                <span className="text-warn">미배치</span>
+                <span className="rounded px-1.5 py-0.5 text-[11px] font-medium text-warn ring-1 ring-inset ring-[color-mix(in_srgb,var(--warn)_35%,transparent)]">
+                  미배치
+                </span>
               )}
             </span>
           ) : isNow && task.scheduled_time ? (
@@ -102,8 +119,8 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
              * 이 전제는 데이터 쪽에서 지킨다 — 1번의 날짜는 오늘 아니면 없다
              * (분류·칸 이동 모두 오늘로 맞춘다. use-tasks의 moveQuadrant 참고).
              */
-            <span className="mt-1 block text-xs text-muted">
-              {formatTime(task.scheduled_time)}
+            <span className="mt-1.5 block">
+              <TimeChip time={task.scheduled_time} />
             </span>
           ) : null}
         </span>
