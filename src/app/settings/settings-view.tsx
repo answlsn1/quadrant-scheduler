@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { isIOS, isStandalone, pushSupported, vapidKeyBytes } from '@/lib/push'
-import { routineLabel, type Routine } from '@/lib/routines'
+import { RoutineManager } from '@/components/routine-manager'
 import { createClient } from '@/lib/supabase/client'
 
 /**
@@ -43,9 +43,6 @@ export function SettingsView() {
   const [device, setDevice] = useState<DeviceState>('unsupported')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [routines, setRoutines] = useState<Routine[]>([])
-  /** 삭제는 두 번 눌러야 한다 — 첫 탭이 "정말?"로 바뀐다 */
-  const [confirmingRoutineId, setConfirmingRoutineId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -63,13 +60,6 @@ export function SettingsView() {
         setNotifyTime(String(settings.notify_time).slice(0, 5))
         setEnabled(settings.enabled)
       }
-
-      const { data: routineRows } = await supabase
-        .from('routines')
-        .select('*')
-        .eq('active', true)
-        .order('created_at')
-      setRoutines(routineRows ?? [])
 
       await refreshDeviceState()
     }
@@ -166,33 +156,6 @@ export function SettingsView() {
       }
       setDevice('off')
       setMessage('이 기기의 알림을 껐다.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  /** 루틴 삭제: 아직 안 한 발생(active)만 지운다. 완료·버림 이력은 남는다. */
-  async function deleteRoutine(id: string) {
-    if (busy) return
-    setBusy(true)
-    try {
-      const { error: taskError } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('routine_id', id)
-        .eq('status', 'active')
-      if (taskError) {
-        setMessage('루틴 일정을 정리하지 못했습니다.')
-        return
-      }
-      const { error: routineError } = await supabase.from('routines').delete().eq('id', id)
-      if (routineError) {
-        setMessage('루틴을 삭제하지 못했습니다.')
-        return
-      }
-      setRoutines((prev) => prev.filter((r) => r.id !== id))
-      setConfirmingRoutineId(null)
-      setMessage('루틴을 삭제했다.')
     } finally {
       setBusy(false)
     }
@@ -316,50 +279,8 @@ export function SettingsView() {
         </p>
       </section>
 
-      {/* 반복 루틴 관리 — 만들기는 분류 패널에서, 정리는 여기서 */}
-      <section className="mt-4 rounded-xl border border-border p-4">
-        <h2 className="text-sm font-semibold">반복 루틴</h2>
-        {routines.length === 0 ? (
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            없음. 생각을 적고 &quot;일정에 넣는다&quot;를 고르면 매주·매월 루틴을 만들 수 있다.
-          </p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {routines.map((routine) => (
-              <li
-                key={routine.id}
-                className="flex items-center gap-2 rounded-lg border border-border py-1 pl-3 pr-1"
-              >
-                <span className="min-w-0 flex-1 py-1.5">
-                  <span className="block truncate text-sm">{routine.title}</span>
-                  <span className="mt-0.5 block text-[11px] text-muted">
-                    {routineLabel(routine)}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    confirmingRoutineId === routine.id
-                      ? void deleteRoutine(routine.id)
-                      : setConfirmingRoutineId(routine.id)
-                  }
-                  className={`min-h-[44px] shrink-0 rounded-lg px-3 text-xs transition-colors duration-150 disabled:opacity-50 ${
-                    confirmingRoutineId === routine.id
-                      ? 'font-medium text-[var(--q1)]'
-                      : 'text-muted'
-                  }`}
-                >
-                  {confirmingRoutineId === routine.id ? '정말 삭제' : '삭제'}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-3 text-[11px] leading-relaxed text-muted">
-          삭제하면 아직 안 한 발생만 지워지고, 완료·버림 이력은 기록에 남는다.
-        </p>
-      </section>
+      {/* 캘린더와 같은 구현을 쓴다 — 삭제 규칙이 두 벌로 갈라지면 한쪽만 고쳐지는 사고가 난다 */}
+      <RoutineManager />
 
       {message ? (
         <p role="status" className="mt-4 text-sm text-muted">

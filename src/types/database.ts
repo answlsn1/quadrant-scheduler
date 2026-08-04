@@ -183,7 +183,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_routine: {
+        Args: {
+          p_title: string
+          p_freq: string
+          p_days: number[]
+          p_time: string | null
+          p_quadrant: number
+          p_dates: string[]
+        }
+        Returns: Database['public']['Tables']['routines']['Row']
+      }
+      delete_routine: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

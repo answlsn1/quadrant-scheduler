@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { AppNav } from '@/components/app-nav'
+import { RoutineManager } from '@/components/routine-manager'
 import { TaskItem } from '@/components/task-item'
 import { Toast } from '@/components/toast'
 import { quadrantColor } from '@/lib/quadrant'
@@ -16,7 +17,7 @@ import { useTasks } from '@/lib/use-tasks'
  * 그날의 일정이 시간순으로 아래에 뜬다. 기간 일정은 걸친 모든 날에 보인다.
  */
 export function CalendarView() {
-  const { tasks, loading, toast, complete, drop, reschedule, moveQuadrant } = useTasks()
+  const { tasks, loading, toast, complete, drop, reschedule, moveQuadrant, reload } = useTasks()
 
   const today = todayISO()
   const [anchor, setAnchor] = useState(() => {
@@ -127,7 +128,7 @@ export function CalendarView() {
               )}
             </div>
 
-            <section className="mt-6 border-t border-border pt-4 pb-6">
+            <section className="mt-6 border-t border-border pt-4">
               <h2 className="text-[13px] text-muted">{formatDate(selectedDay)}</h2>
               {selectedItems.length === 0 ? (
                 <p className="mt-2 text-sm text-muted">이날 일정 없음.</p>
@@ -146,6 +147,14 @@ export function CalendarView() {
                 </ul>
               )}
             </section>
+
+            {/*
+              반복 업무의 직접 입구 (사장님 지시 2026-08-04).
+              루틴을 만들거나 지우면 달력에 깔린 일정이 바뀌므로 목록을 다시 받는다.
+            */}
+            <div className="pb-6">
+              <RoutineManager onChanged={() => void reload()} />
+            </div>
           </>
         )}
       </main>
