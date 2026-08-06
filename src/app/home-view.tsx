@@ -159,6 +159,10 @@ export function HomeView() {
     .sort(byTime)
   const batch = active.filter((t) => t.quadrant === 3)
   const recentlyDropped = archived.filter((t) => t.status === 'dropped').slice(0, 8)
+  /** 사분면 전체 2번 칸에서 뺀 루틴 발생 수 — 캘린더 안내에 쓴다 */
+  const routineOccurrenceCount = active.filter(
+    (t) => t.quadrant === 2 && t.routine_id,
+  ).length
 
   // 분류 대상: 오래된 것부터, 이번 세션에서 "나중에"한 것은 건너뛴다
   const classifyQueue = inbox
@@ -404,7 +408,25 @@ export function HomeView() {
                   <QuadrantCell
                     key={q}
                     quadrant={q}
-                    tasks={q === 4 ? recentlyDropped : active.filter((t) => t.quadrant === q)}
+                    /*
+                     * 2번 칸에서 루틴 발생은 뺀다 (사장님 피드백 2026-08-06).
+                     * 매주·매월 발생이 수십 건씩 쌓여 정작 낱개 일정이 묻힌다.
+                     * 루틴은 캘린더 탭이 규칙 단위로 보여주는 곳이다.
+                     * 오늘 할 일·알림에는 그대로 남는다 — 실행 목록이니까.
+                     */
+                    tasks={
+                      q === 4
+                        ? recentlyDropped
+                        : active.filter(
+                            (t) => t.quadrant === q && !(q === 2 && t.routine_id),
+                          )
+                    }
+                    footnote={
+                      q === 2 && routineOccurrenceCount > 0
+                        ? `고정 일정 ${routineOccurrenceCount}건은 캘린더에서`
+                        : undefined
+                    }
+                    extraCount={q === 2 ? routineOccurrenceCount : 0}
                     open={openQuadrants.has(q)}
                     onToggle={() => toggleQuadrant(q)}
                     onComplete={complete}
@@ -557,6 +579,8 @@ function Section({
 function QuadrantCell({
   quadrant,
   tasks,
+  footnote,
+  extraCount = 0,
   open,
   onToggle,
   onComplete,
@@ -566,6 +590,13 @@ function QuadrantCell({
 }: {
   quadrant: Quadrant
   tasks: Task[]
+  /** 이 칸에서 일부러 뺀 것이 있을 때의 안내 (예: 루틴은 캘린더에서) */
+  footnote?: string
+  /**
+   * 목록에서 뺐지만 존재는 알려야 하는 개수 (루틴 발생).
+   * 낱개 0 + 루틴 52건일 때 접힌 뱃지가 "0"이면 비어 보인다 (리뷰 발견).
+   */
+  extraCount?: number
   open: boolean
   onToggle: () => void
   onComplete: (id: string) => void
@@ -597,15 +628,20 @@ function QuadrantCell({
         <span className="text-[12.5px] text-muted">{spec.axis}</span>
 
         {/* 접힌 상태의 주인공은 개수다 — 채워서, 칸 색으로 */}
+        {extraCount > 0 ? (
+          <span className="ml-auto text-[11px] tabular-nums text-muted">
+            +고정 {extraCount}
+          </span>
+        ) : null}
         <span
           style={
             hasItems && !isDropCell
               ? { background: color, color: 'var(--background)' }
               : undefined
           }
-          className={`ml-auto min-w-[32px] rounded-lg px-2 py-1 text-center text-[15px] font-bold tabular-nums ${
+          className={`min-w-[32px] rounded-lg px-2 py-1 text-center text-[15px] font-bold tabular-nums ${
             hasItems && !isDropCell ? '' : 'text-muted'
-          }`}
+          } ${extraCount > 0 ? '' : 'ml-auto'}`}
         >
           {tasks.length}
         </span>
@@ -645,6 +681,14 @@ function QuadrantCell({
               ))}
             </ul>
           )}
+          {footnote ? (
+            <Link
+              href="/calendar"
+              className="mt-1 flex min-h-[40px] items-center text-[12px] text-muted underline"
+            >
+              {footnote} →
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </section>

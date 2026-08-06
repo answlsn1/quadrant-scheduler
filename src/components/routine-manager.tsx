@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { PickerField } from '@/components/picker-field'
 import { quadrantColor, SCHEDULE_ON_CLASSIFY } from '@/lib/quadrant'
 import { routineLabel, WEEKDAY_LABELS, type RoutineFreq } from '@/lib/routines'
 import { useRoutines } from '@/lib/use-routines'
@@ -150,12 +151,12 @@ export function RoutineManager({ onChanged }: { onChanged?: () => void }) {
           <div className="mt-2.5 flex items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[11px] text-muted">시간 (선택)</span>
-              <input
+              <PickerField
                 type="time"
                 value={time}
-                onChange={(e) => setTime(e.target.value)}
-                aria-label="시간"
-                className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
+                onChange={setTime}
+                placeholder="시간 선택"
+                ariaLabel="시간"
               />
             </label>
             <button

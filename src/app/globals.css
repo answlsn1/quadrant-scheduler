@@ -120,6 +120,26 @@ button {
   }
 }
 
+/*
+ * iOS Safari의 date/time input 교정 (2026-08-06 실기기 피드백).
+ * 기본 외형을 벗겨 높이·배경을 우리 스타일로 통일하고,
+ * iOS가 값을 가운데 정렬하는 것을 왼쪽으로 되돌린다 — 라벨·안내 텍스트와 줄이 맞아야 한다.
+ */
+input[type='date'],
+input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+  /*
+   * iOS는 이 입력들에 큰 내재 최소폭을 줘서 flex-1로도 줄지 않는다 —
+   * 시작·끝 날짜가 나란히 서면 서로 밀어내며 겹치던 원인 (실기기 스크린샷).
+   */
+  min-width: 0;
+}
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* 키보드 포커스는 항상 보이게 */
 :focus-visible {
   outline: 2px solid var(--accent);

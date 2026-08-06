@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { PickerField } from '@/components/picker-field'
 import {
   QUADRANTS,
   QUADRANT_SPEC,
@@ -114,12 +115,14 @@ export function ClassifyPanel({ task, remaining, onClassify, onRoutine, onSkip, 
         <div className="mt-2.5 flex flex-col gap-2.5">
           <p className="text-[13px] text-muted">실행 시간은?</p>
           <div className="flex items-end gap-2">
-            <input
+            <PickerField
               type="time"
+              tall
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              aria-label="실행 시간"
-              className="min-h-[52px] min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 text-sm"
+              onChange={setStartTime}
+              placeholder="시간 선택"
+              ariaLabel="실행 시간"
+              className="flex-1"
             />
             <button
               type="button"
@@ -185,12 +188,13 @@ export function ClassifyPanel({ task, remaining, onClassify, onRoutine, onSkip, 
           <div className="flex items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[11px] text-muted">시간 (선택)</span>
-              <input
+              <PickerField
                 type="time"
+                tall
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                aria-label="루틴 시간"
-                className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm"
+                onChange={setStartTime}
+                placeholder="시간 선택"
+                ariaLabel="루틴 시간"
               />
             </label>
             <button
@@ -260,27 +264,29 @@ export function ClassifyPanel({ task, remaining, onClassify, onRoutine, onSkip, 
           <div className="flex items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[11px] text-muted">시작</span>
-              <input
+              <PickerField
                 type="date"
+                tall
                 value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value)
-                  if (endDate && e.target.value && endDate < e.target.value) setEndDate('')
+                onChange={(v) => {
+                  setStartDate(v)
+                  if (endDate && v && endDate < v) setEndDate('')
                 }}
-                aria-label="시작 날짜"
-                className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm"
+                placeholder="날짜 선택"
+                ariaLabel="시작 날짜"
               />
             </label>
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[11px] text-muted">끝 (기간일 때만)</span>
-              <input
+              <PickerField
                 type="date"
+                tall
                 value={endDate}
                 min={startDate || undefined}
                 disabled={!startDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                aria-label="끝 날짜"
-                className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm disabled:opacity-40"
+                onChange={setEndDate}
+                placeholder="날짜 선택"
+                ariaLabel="끝 날짜"
               />
             </label>
           </div>
@@ -288,13 +294,14 @@ export function ClassifyPanel({ task, remaining, onClassify, onRoutine, onSkip, 
           <div className="flex items-end gap-2">
             <label className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[11px] text-muted">시간 (선택)</span>
-              <input
+              <PickerField
                 type="time"
+                tall
                 value={startTime}
                 disabled={!startDate}
-                onChange={(e) => setStartTime(e.target.value)}
-                aria-label="시간"
-                className="min-h-[52px] w-full rounded-xl border border-border bg-surface px-3 text-sm disabled:opacity-40"
+                onChange={setStartTime}
+                placeholder="시간 선택"
+                ariaLabel="시간"
               />
             </label>
             <button

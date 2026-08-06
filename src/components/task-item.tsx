@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { PickerField } from '@/components/picker-field'
+
 import {
   QUADRANTS,
   QUADRANT_SPEC,
@@ -157,11 +159,11 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
               <div className="flex w-full items-center gap-2">
                 <label className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-[11px] text-muted">시작</span>
-                  <input
+                  <PickerField
                     type="date"
                     value={task.scheduled_date ?? ''}
-                    onChange={(e) => {
-                      const start = e.target.value || null
+                    onChange={(v) => {
+                      const start = v || null
                       // 시작을 지우면 끝·시간도 함께 비운다 (혼자 남을 수 없다).
                       // 시작을 끝보다 뒤로 미루면 끝을 비운다 — 그대로 보내면
                       // DB CHECK(끝 >= 시작)에 걸려 롤백 토스트만 뜬다. (리뷰 발견)
@@ -171,70 +173,58 @@ export function TaskItem({ task, onComplete, onDrop, onReschedule, onMove }: Pro
                           : null
                       onReschedule(task.id, start, end, start ? task.scheduled_time : null)
                     }}
-                    aria-label="시작 날짜"
-                    className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
+                    placeholder="날짜 선택"
+                    ariaLabel="시작 날짜"
                   />
                 </label>
                 <label className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-[11px] text-muted">끝 (기간일 때만)</span>
-                  <input
+                  <PickerField
                     type="date"
                     value={task.scheduled_end_date ?? ''}
                     min={task.scheduled_date ?? undefined}
                     disabled={!task.scheduled_date}
-                    onChange={(e) =>
-                      onReschedule(
-                        task.id,
-                        task.scheduled_date,
-                        e.target.value || null,
-                        task.scheduled_time,
-                      )
+                    onChange={(v) =>
+                      onReschedule(task.id, task.scheduled_date, v || null, task.scheduled_time)
                     }
-                    aria-label="끝 날짜"
-                    className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm disabled:opacity-40"
+                    placeholder="날짜 선택"
+                    ariaLabel="끝 날짜"
                   />
                 </label>
               </div>
               <label className="flex w-full flex-col gap-1">
                 <span className="text-[11px] text-muted">시간 (선택)</span>
-                <input
+                <PickerField
                   type="time"
                   value={task.scheduled_time ? task.scheduled_time.slice(0, 5) : ''}
                   disabled={!task.scheduled_date}
-                  onChange={(e) =>
-                    onReschedule(
-                      task.id,
-                      task.scheduled_date,
-                      task.scheduled_end_date,
-                      e.target.value || null,
-                    )
+                  onChange={(v) =>
+                    onReschedule(task.id, task.scheduled_date, task.scheduled_end_date, v || null)
                   }
-                  aria-label="시간"
-                  className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm disabled:opacity-40"
+                  placeholder="시간 선택"
+                  ariaLabel="시간"
                 />
               </label>
             </>
           ) : isNow ? (
-            <>
-              <label className="flex w-full flex-col gap-1">
-                <span className="text-[11px] text-muted">실행 시간 (선택)</span>
-                <input
-                  type="time"
-                  value={task.scheduled_time ? task.scheduled_time.slice(0, 5) : ''}
-                  onChange={(e) =>
-                    // 시간을 정하면 날짜도 오늘로 같이 (시간은 날짜 없이 못 산다)
-                    onReschedule(
-                      task.id,
-                      e.target.value ? (task.scheduled_date ?? todayISO()) : task.scheduled_date,
-                      task.scheduled_end_date,
-                      e.target.value || null,
-                    )
-                  }
-                  aria-label="실행 시간"
-                  className="min-h-[48px] w-full rounded-lg border border-border bg-transparent px-3 text-sm"
-                />
-              </label>
-            </>
+            <label className="flex w-full flex-col gap-1">
+              <span className="text-[11px] text-muted">실행 시간 (선택)</span>
+              <PickerField
+                type="time"
+                value={task.scheduled_time ? task.scheduled_time.slice(0, 5) : ''}
+                onChange={(v) =>
+                  // 시간을 정하면 날짜도 오늘로 같이 (시간은 날짜 없이 못 산다)
+                  onReschedule(
+                    task.id,
+                    v ? (task.scheduled_date ?? todayISO()) : task.scheduled_date,
+                    task.scheduled_end_date,
+                    v || null,
+                  )
+                }
+                placeholder="시간 선택"
+                ariaLabel="실행 시간"
+              />
+            </label>
           ) : null}
 
           {/*

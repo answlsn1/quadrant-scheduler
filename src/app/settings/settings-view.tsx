@@ -39,6 +39,8 @@ export function SettingsView() {
 
   const [userId, setUserId] = useState<string | null>(null)
   const [notifyTime, setNotifyTime] = useState('08:00')
+  /** 실제 발송에 쓰이는 저장된 시간. 테스트 알림은 이걸 인용해야 거짓말을 안 한다 (리뷰 발견) */
+  const [savedTime, setSavedTime] = useState('08:00')
   const [enabled, setEnabled] = useState(true)
   const [device, setDevice] = useState<DeviceState>('unsupported')
   const [busy, setBusy] = useState(false)
@@ -57,7 +59,9 @@ export function SettingsView() {
         .maybeSingle()
 
       if (settings) {
-        setNotifyTime(String(settings.notify_time).slice(0, 5))
+        const stored = String(settings.notify_time).slice(0, 5)
+        setNotifyTime(stored)
+        setSavedTime(stored)
         setEnabled(settings.enabled)
       }
 
@@ -88,14 +92,16 @@ export function SettingsView() {
   /** 계정 설정 저장. 행이 없으면 만든다. */
   async function saveAccount(next: { notify_time?: string; enabled?: boolean }) {
     if (!userId) return
+    const timeToStore = next.notify_time ?? notifyTime
     const { error } = await supabase.from('notification_settings').upsert(
       {
         user_id: userId,
-        notify_time: next.notify_time ?? notifyTime,
+        notify_time: timeToStore,
         enabled: next.enabled ?? enabled,
       },
       { onConflict: 'user_id' },
     )
+    if (!error) setSavedTime(timeToStore)
     setMessage(error ? '저장하지 못했습니다.' : '저장됐다.')
   }
 
@@ -161,10 +167,15 @@ export function SettingsView() {
     }
   }
 
+  /*
+   * 알림은 잠금화면으로 찾아가는 메시지라 앱 안의 건조한 반말 대신
+   * 사람이 말을 건네는 존댓말을 쓴다 (2026-08-06 사장님 피드백).
+   */
   async function sendTest() {
     const registration = await navigator.serviceWorker.ready
-    await registration.showNotification('오늘의 일정 (테스트)', {
-      body: '알림이 이렇게 온다. 매일 ' + notifyTime + '에 당일 일정을 보내준다.',
+    // savedTime을 인용한다 — 입력만 바꾸고 저장 안 한 시간을 약속하면 거짓말이 된다
+    await registration.showNotification('알림이 잘 도착했어요', {
+      body: `매일 ${savedTime}에 그날의 일정을 이렇게 정리해서 보내드릴게요.`,
       icon: '/icons/icon-192.png',
       tag: 'test',
     })
